@@ -4,46 +4,63 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
-using Shared;
-using Shared.Helpers;
-using PoEMemory;
-using PoEMemory.Components;
-using Shared.Enums;
+using ExileCore;
+using ExileCore.PoEMemory;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using SharpDX;
-using Input = Exile.Input;
+using Input = ExileCore.Input;
 
 namespace PickIt
 {
     public class PickIt : BaseSettingsPlugin<PickItSettings>
     {
-        //https://stackoverflow.com/questions/826777/how-to-have-an-auto-incrementing-version-number-visual-studio
-        public Version Version { get; } = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        public string PluginVersion { get; set; }
-        public DateTime buildDate;
         private const string PickitRuleDirectory = "Pickit Rules";
         private readonly List<Entity> _entities = new List<Entity>();
         private readonly Stopwatch _pickUpTimer = Stopwatch.StartNew();
         private readonly Stopwatch DebugTimer = Stopwatch.StartNew();
+        private readonly WaitTime toPick = new WaitTime(10);
+        private readonly WaitTime wait3ms = new WaitTime(3);
+        private readonly WaitTime waitForNextTry = new WaitTime(33);
         private Vector2 _clickWindowOffset;
         private HashSet<string> _magicRules;
         private HashSet<string> _normalRules;
         private HashSet<string> _rareRules;
         private HashSet<string> _uniqueRules;
         private Dictionary<string, int> _weightsRules = new Dictionary<string, int>();
-        public string MagicRuleFile;
-        public string NormalRuleFile;
-        public string RareRuleFile;
-        public string UniqueRuleFile;
+        private WaitTime _workCoroutine;
+        public DateTime buildDate;
+        private uint coroutineCounter;
+        private Vector2 cursorBeforePickIt;
         private bool CustomRulesExists = true;
+        private bool FullWork = true;
+        private Element LastLabelClick;
+        public string MagicRuleFile;
+        private WaitTime mainWorkCoroutine = new WaitTime(5);
+        public string NormalRuleFile;
+        private Coroutine pickItCoroutine;
+        public string RareRuleFile;
+        private WaitTime tryToPick = new WaitTime(7);
+        public string UniqueRuleFile;
+        private WaitTime waitPlayerMove = new WaitTime(10);
 
-        public PickIt() => Name = "Pickit";
+        public PickIt()
+        {
+            Name = "Pickit";
+        }
+
+        //https://stackoverflow.com/questions/826777/how-to-have-an-auto-incrementing-version-number-visual-studio
+        public Version Version { get; } = Assembly.GetExecutingAssembly().GetName().Version;
+        public string PluginVersion { get; set; }
         private List<string> PickitFiles { get; set; }
 
-
-        public override bool Initialise() {
+        public override bool Initialise()
+        {
             buildDate = new DateTime(2000, 1, 1).AddDays(Version.Build).AddSeconds(Version.Revision * 2);
             PluginVersion = $"{Version}";
             pickItCoroutine = new Coroutine(MainWorkCoroutine(), this, "Pick It");
@@ -57,21 +74,8 @@ namespace PickIt
             return true;
         }
 
-        private Coroutine pickItCoroutine;
-
-        private bool FullWork = true;
-        private uint coroutineCounter = 0;
-        private Vector2 cursorBeforePickIt;
-
-        private WaitTime mainWorkCoroutine = new WaitTime(5);
-        private WaitTime tryToPick = new WaitTime(7);
-        private WaitTime wait3ms = new WaitTime(3);
-        private WaitTime toPick = new WaitTime(10);
-        private WaitTime waitPlayerMove = new WaitTime(10);
-        private WaitTime waitForNextTry = new WaitTime(33);
-        private WaitTime _workCoroutine;
-
-        private IEnumerator MainWorkCoroutine() {
+        private IEnumerator MainWorkCoroutine()
+        {
             while (true)
             {
                 yield return FindItemToPick();
@@ -196,15 +200,18 @@ namespace PickIt
             }
         }*/
 
-        public override Job Tick() {
+        public override Job Tick()
+        {
             if (Input.GetKeyState(Keys.Escape)) pickItCoroutine.Pause();
 
             if (Input.GetKeyState(Settings.PickUpKey.Value))
             {
                 DebugTimer.Restart();
+
                 if (pickItCoroutine.IsDone)
                 {
                     var firstOrDefault = Core.ParallelRunner.Coroutines.FirstOrDefault(x => x.OwnerName == nameof(PickIt));
+
                     if (firstOrDefault != null)
                         pickItCoroutine = firstOrDefault;
                 }
@@ -227,23 +234,27 @@ namespace PickIt
                 LogMessage("Error pick it stop after time limit 2000 ms", 1);
                 DebugTimer.Reset();
             }
+
             return null;
         }
 
-        public bool InCustomList(HashSet<string> checkList, CustomItem itemEntity, ItemRarity rarity) {
+        public bool InCustomList(HashSet<string> checkList, CustomItem itemEntity, ItemRarity rarity)
+        {
             if (checkList.Contains(itemEntity.BaseName) && itemEntity.Rarity == rarity) return true;
             return false;
         }
 
-
-        public bool OverrideChecks(CustomItem item) {
+        public bool OverrideChecks(CustomItem item)
+        {
             try
             {
                 #region Currency
 
                 if (Settings.AllCurrency && item.ClassName.EndsWith("Currency"))
+                {
                     return !item.Path.Equals("Metadata/Items/Currency/CurrencyIdentification", StringComparison.Ordinal) ||
                            !Settings.IgnoreScrollOfWisdom;
+                }
 
                 #endregion
 
@@ -281,10 +292,13 @@ namespace PickIt
                     if (Settings.RareBoots && item.ClassName == "Boots" && item.ItemLevel >= Settings.RareBootsilvl) return true;
                     if (Settings.RareHelmets && item.ClassName == "Helmet" && item.ItemLevel >= Settings.RareHelmetsilvl) return true;
                     if (Settings.RareArmour && item.ClassName == "Body Armour" && item.ItemLevel >= Settings.RareArmourilvl) return true;
+
                     if (Settings.RareWeapon && item.IsWeapon && item.ItemLevel >= Settings.RareWeaponilvl &&
                         item.Width * item.Height <= Settings.ItemCells) return true;
+
                     if (Settings.RareWeapon && item.IsWeapon && item.ItemLevel >= Settings.RareWeaponilvl &&
                         item.Width <= Settings.RareWeaponWidth && item.Height <= Settings.RareWeaponHeight) return true;
+
                     if (Settings.RareShield && item.ClassName == "Shield" && item.ItemLevel >= Settings.RareShieldilvl &&
                         item.Width * item.Height <= Settings.ItemCells) return true;
                 }
@@ -304,7 +318,6 @@ namespace PickIt
                 if (Settings.AllDivs && item.ClassName == "DivinationCard") return true;
 
                 #endregion
-
 
                 #region Maps
 
@@ -334,13 +347,14 @@ namespace PickIt
             }
             catch (Exception e)
             {
-               LogError($"{nameof(OverrideChecks)} error: {e}");
+                LogError($"{nameof(OverrideChecks)} error: {e}");
             }
 
             return false;
         }
 
-        public bool DoWePickThis(CustomItem itemEntity) {
+        public bool DoWePickThis(CustomItem itemEntity)
+        {
             var pickItemUp = false;
 
             #region Force Pickup All
@@ -357,23 +371,35 @@ namespace PickIt
                 {
                     case ItemRarity.Normal:
                         if (_normalRules != null)
+                        {
                             if (InCustomList(_normalRules, itemEntity, itemEntity.Rarity))
                                 pickItemUp = true;
+                        }
+
                         break;
                     case ItemRarity.Magic:
                         if (_magicRules != null)
+                        {
                             if (InCustomList(_magicRules, itemEntity, itemEntity.Rarity))
                                 pickItemUp = true;
+                        }
+
                         break;
                     case ItemRarity.Rare:
                         if (_rareRules != null)
+                        {
                             if (InCustomList(_rareRules, itemEntity, itemEntity.Rarity))
                                 pickItemUp = true;
+                        }
+
                         break;
                     case ItemRarity.Unique:
                         if (_uniqueRules != null)
+                        {
                             if (InCustomList(_uniqueRules, itemEntity, itemEntity.Rarity))
                                 pickItemUp = true;
+                        }
+
                         break;
                 }
             }
@@ -389,7 +415,8 @@ namespace PickIt
             return pickItemUp;
         }
 
-        private IEnumerator FindItemToPick() {
+        private IEnumerator FindItemToPick()
+        {
             if (!Input.GetKeyState(Settings.PickUpKey.Value)) yield break;
             var window = GameController.Window.GetWindowRectangleTimeCache;
             var rect = new RectangleF(window.X, window.X, window.X + window.Width, window.Y + window.Height);
@@ -408,30 +435,28 @@ namespace PickIt
                         x.ItemOnGround.GetComponent<Positioned>().GridPos
                             .Distance(playerPos), _weightsRules))
                     .OrderByDescending(x => x.Weight).ThenBy(x => x.Distance).ToList();
-
-             
             }
             else
             {
                 currentLabels = GameController.Game.IngameState.IngameUi.ItemsOnGroundLabels
                     .Where(x => x.Address != 0 &&
                                 x.ItemOnGround?.GetComponent<WorldItem>()?.ItemEntity.Path != null &&
-                                x.IsVisible  &&
+                                x.IsVisible &&
                                 (x.CanPickUp || x.MaxTimeForPickUp.TotalSeconds <= 0))
                     .Select(x => new CustomItem(x, GameController.Files,
                         x.ItemOnGround.GetComponent<Positioned>().GridPos
                             .Distance(playerPos), _weightsRules))
                     .OrderBy(x => x.Distance).ToList();
             }
-            
-             GameController.Debug["PickIt"] = currentLabels;
+
+            GameController.Debug["PickIt"] = currentLabels;
             var pickUpThisItem = currentLabels.FirstOrDefault(x => DoWePickThis(x) && x.Distance < Settings.PickupRange);
             if (pickUpThisItem?.GroundItem != null) yield return TryToPickV2(pickUpThisItem);
             FullWork = true;
         }
 
-
-        private IEnumerator TryToPickV2(CustomItem pickItItem) {
+        private IEnumerator TryToPickV2(CustomItem pickItItem)
+        {
             if (!pickItItem.IsValid)
             {
                 FullWork = true;
@@ -446,6 +471,7 @@ namespace PickIt
             rectangleOfGameWindow.Inflate(-25, -25);
             centerOfItemLabel.X += rectangleOfGameWindow.Left;
             centerOfItemLabel.Y += rectangleOfGameWindow.Top;
+
             if (!rectangleOfGameWindow.Intersects(new RectangleF(centerOfItemLabel.X, centerOfItemLabel.Y, 3, 3)))
             {
                 FullWork = true;
@@ -454,9 +480,11 @@ namespace PickIt
             }
 
             var tryCount = 0;
+
             while (!pickItItem.IsTargeted() && tryCount < 5)
             {
                 var completeItemLabel = pickItItem.LabelOnGround?.Label;
+
                 if (completeItemLabel == null)
                 {
                     if (tryCount > 0)
@@ -477,7 +505,6 @@ namespace PickIt
 
                 var clientRectCenter = clientRect.Center;
 
-
                 var vector2 = clientRectCenter + _clickWindowOffset;
 
                 Mouse.MoveCursorToPosition(vector2);
@@ -489,9 +516,11 @@ namespace PickIt
                 tryCount++;
             }
 
-            if (pickItItem.IsTargeted()) 
+            if (pickItItem.IsTargeted())
                 Input.Click(MouseButtons.Left);
+
             tryCount = 0;
+
             while (GameController.Game.IngameState.IngameUi.ItemsOnGroundLabels.FirstOrDefault(
                        x => x.Address == pickItItem.LabelOnGround.Address) != null && tryCount < 6)
             {
@@ -500,18 +529,16 @@ namespace PickIt
             }
 
             yield return waitForNextTry;
+
             //   Mouse.MoveCursorToPosition(oldMousePosition);
         }
-
-        private Element LastLabelClick;
 
         #region (Re)Loading Rules
 
         private void LoadRuleFiles()
         {
-            var PickitConfigFileDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins", "Compiled",nameof(PickIt),
+            var PickitConfigFileDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins", "Compiled", nameof(PickIt),
                 PickitRuleDirectory);
-
 
             if (!Directory.Exists(PickitConfigFileDirectory))
             {
@@ -530,8 +557,10 @@ namespace PickIt
             _weightsRules = LoadWeights("Weights");
         }
 
-        public HashSet<string> LoadPickit(string fileName) {
+        public HashSet<string> LoadPickit(string fileName)
+        {
             var hashSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             if (fileName == string.Empty)
             {
                 CustomRulesExists = false;
@@ -539,6 +568,7 @@ namespace PickIt
             }
 
             var pickitFile = $@"{DirectoryFullName}\{PickitRuleDirectory}\{fileName}.txt";
+
             if (!File.Exists(pickitFile))
             {
                 CustomRulesExists = false;
@@ -546,12 +576,18 @@ namespace PickIt
             }
 
             var lines = File.ReadAllLines(pickitFile);
-            foreach (var x in lines.Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("#"))) hashSet.Add(x.Trim());
+
+            foreach (var x in lines.Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("#")))
+            {
+                hashSet.Add(x.Trim());
+            }
+
             LogMessage($"PICKIT :: (Re)Loaded {fileName}", 5, Color.GreenYellow);
             return hashSet;
         }
 
-        public Dictionary<string, int> LoadWeights(string fileName) {
+        public Dictionary<string, int> LoadWeights(string fileName)
+        {
             var result = new Dictionary<string, int>();
             var filePath = $@"{DirectoryFullName}\{PickitRuleDirectory}\{fileName}.txt";
             if (!File.Exists(filePath)) return result;
@@ -574,15 +610,22 @@ namespace PickIt
             return result;
         }
 
-        public override void OnPluginDestroyForHotReload() => pickItCoroutine.Done(true);
+        public override void OnPluginDestroyForHotReload()
+        {
+            pickItCoroutine.Done(true);
+        }
 
         #endregion
 
         #region Adding / Removing Entities
 
-        public override void EntityAdded(Entity Entity) { }
+        public override void EntityAdded(Entity Entity)
+        {
+        }
 
-        public override void EntityRemoved(Entity Entity) { }
+        public override void EntityRemoved(Entity Entity)
+        {
+        }
 
         #endregion
     }

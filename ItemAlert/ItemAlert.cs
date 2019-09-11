@@ -2,53 +2,58 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Antlr4.Runtime;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
-using Shared.Abstract;
+using ExileCore;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.Elements;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
+using ExileCore.Shared.Abstract;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using PoeFilterParser;
 using PoeFilterParser.Model;
-using PoEMemory;
-using PoEMemory.Components;
-using PoEMemory.Elements;
-using Shared;
-using Shared.Enums;
-using Shared.Helpers;
-using Shared.Static;
 using SharpDX;
 
 namespace ItemAlert
 {
     public class ItemAlert : BaseSettingsPlugin<ItemAlertSettings>
     {
-        private PoeFilterVisitor visitor;
-        private Dictionary<long, LabelOnGround> currentLabels = new Dictionary<long, LabelOnGround>();
-        private Queue<Entity> queueOfWorldItems = new Queue<Entity>();
-        private ConcurrentQueue<Entity> queueUpdatedItems = new ConcurrentQueue<Entity>();
-        private object locker = new object();
         private const int BOTTOM_MARGIN = 2;
+        private readonly object locker = new object();
+        private readonly Queue<Entity> queueOfWorldItems = new Queue<Entity>();
+        private readonly ConcurrentQueue<Entity> queueUpdatedItems = new ConcurrentQueue<Entity>();
+        private Dictionary<long, LabelOnGround> currentLabels = new Dictionary<long, LabelOnGround>();
         private bool shouldUpdate = true;
-        public ItemAlert() => Order = 5;
+        private Task task;
+        private bool TownOrHideout;
+        private PoeFilterVisitor visitor;
 
-        Task task;
+        public ItemAlert()
+        {
+            Order = 5;
+        }
 
-        public override void OnLoad() {
+        public override void OnLoad()
+        {
             task = Task.Run(() => PoeFilterInit(Settings.FilePath));
         }
 
-        public override bool Initialise() {
+        public override bool Initialise()
+        {
             GameController.UnderPanel.WantUse(() => Settings.Enable);
+
             Settings.FilePath.OnFileChanged += (sender, s) =>
             {
                 PoeFilterInit(s);
                 var coroutine = new Coroutine(RestartParseItemsAfterFilterChange(), this, "Check items after filter change");
                 Core.MainRunner.Run(coroutine);
             };
+
             Graphics.InitImage("currency.png");
             Graphics.InitImage("item_icons.png");
             Graphics.InitImage("directions.png");
@@ -56,30 +61,38 @@ namespace ItemAlert
             return true;
         }
 
-        private IEnumerator RestartParseItemsAfterFilterChange() {
-            foreach (var entity in GameController.EntityListWrapper.ValidEntitiesByType[EntityType.WorldItem]) EntityAdded(entity);
+        private IEnumerator RestartParseItemsAfterFilterChange()
+        {
+            foreach (var entity in GameController.EntityListWrapper.ValidEntitiesByType[EntityType.WorldItem])
+            {
+                EntityAdded(entity);
+            }
+
             yield return false;
         }
 
-
-        public override Job Tick() {
-
+        public override Job Tick()
+        {
             if (Settings.MultiThreading && queueUpdatedItems.Count >= Settings.MultiThreadingWhenItemMoreThan)
-            {
                 return GameController.MultiThreadManager.AddJob(TickLogic, nameof(ItemAlert));
-            }
+
             TickLogic();
             return null;
         }
 
+        private void TickLogic()
+        {
+            while (queueUpdatedItems.TryDequeue(out var entity))
+            {
+                queueOfWorldItems.Enqueue(entity);
+            }
 
-        void TickLogic() {
-            while (queueUpdatedItems.TryDequeue(out var entity)) queueOfWorldItems.Enqueue(entity);
             while (queueOfWorldItems.Count > 0)
             {
                 var entity = queueOfWorldItems.Dequeue();
 
                 var item = entity.GetComponent<WorldItem>()?.ItemEntity;
+
                 if (!string.IsNullOrEmpty(Settings.FilePath) && item?.Path != null)
                 {
                     if (item.Path != null && !item.Path.StartsWith("Meta")) continue;
@@ -96,21 +109,24 @@ namespace ItemAlert
 
             if (shouldUpdate)
             {
-                currentLabels = GameController.Game.IngameState.IngameUi.ItemsOnGroundLabels?.Where(x=>x.ItemOnGround!=null).GroupBy(y => y.ItemOnGround.Address)
-                                              .ToDictionary(y => y.Key, y => y.First());
+                currentLabels = GameController.Game.IngameState.IngameUi.ItemsOnGroundLabels?.Where(x => x.ItemOnGround != null)
+                    .GroupBy(y => y.ItemOnGround.Address)
+                    .ToDictionary(y => y.Key, y => y.First());
+
                 shouldUpdate = false;
             }
         }
 
-        public override void Render() {
+        public override void Render()
+        {
             var playerPos = GameController.Player.GridPos;
             var position = GameController.UnderPanel.StartDrawPoint;
-
 
             foreach (var entity in GameController.EntityListWrapper.ValidEntitiesByType[EntityType.WorldItem])
             {
                 var alertDrawStyle = entity.GetHudComponent<AlertDrawStyle>();
                 if (alertDrawStyle?.Text == null) continue;
+
                 if (!currentLabels.TryGetValue(entity.Address, out var entityLabel))
                 {
                     shouldUpdate = true;
@@ -118,6 +134,7 @@ namespace ItemAlert
                 }
 
                 if (!Settings.ShowText) continue;
+
                 if (Settings.HideOthers)
                 {
                     if (entityLabel.CanPickUp || entityLabel.MaxTimeForPickUp.TotalSeconds == 0)
@@ -133,6 +150,7 @@ namespace ItemAlert
                         var TextColor = alertDrawStyle.TextColor;
                         var BorderColor = alertDrawStyle.BorderColor;
                         var BackgroundColor = alertDrawStyle.BackgroundColor;
+
                         if (Settings.DimOtherByPercentToggle)
                         {
                             // edit values to new ones
@@ -147,23 +165,26 @@ namespace ItemAlert
 
                         // Complete new KeyValuePair with new stuff
                         var ModifiedDrawStyle = new AlertDrawStyle(alertDrawStyle.Text, TextColor, alertDrawStyle.BorderWidth, BorderColor,
-                                                                   BackgroundColor, alertDrawStyle.IconIndex);
+                            BackgroundColor, alertDrawStyle.IconIndex);
+
                         position = DrawText(playerPos, position, BOTTOM_MARGIN, ModifiedDrawStyle, entity);
                     }
                 }
             }
         }
 
-        private Color ReduceNumbers(Color oldColor, double percent) {
+        private Color ReduceNumbers(Color oldColor, double percent)
+        {
             var newColor = oldColor;
-            newColor.R = (byte) ((double) oldColor.R - (double) oldColor.R * percent);
-            newColor.G = (byte) ((double) oldColor.G - (double) oldColor.G * percent);
-            newColor.B = (byte) ((double) oldColor.B - (double) oldColor.B * percent);
-            newColor.A = (byte) ((double) oldColor.A - (double) oldColor.A / 10 * percent);
+            newColor.R = (byte) (oldColor.R - oldColor.R * percent);
+            newColor.G = (byte) (oldColor.G - oldColor.G * percent);
+            newColor.B = (byte) (oldColor.B - oldColor.B * percent);
+            newColor.A = (byte) (oldColor.A - (double) oldColor.A / 10 * percent);
             return newColor;
         }
 
-        private Vector2 DrawText(Vector2 playerPos, Vector2 position, int BOTTOM_MARGIN, AlertDrawStyle kv, Entity entity) {
+        private Vector2 DrawText(Vector2 playerPos, Vector2 position, int BOTTOM_MARGIN, AlertDrawStyle kv, Entity entity)
+        {
             var padding = new Vector2(5, 2);
             var positioned = entity.GetComponent<Positioned>();
             if (positioned == null) return position;
@@ -174,7 +195,8 @@ namespace ItemAlert
             return position;
         }
 
-        private Vector2 DrawItem(AlertDrawStyle drawStyle, Vector2 delta, Vector2 position, Vector2 padding, string text) {
+        private Vector2 DrawItem(AlertDrawStyle drawStyle, Vector2 delta, Vector2 position, Vector2 padding, string text)
+        {
             padding.X -= drawStyle.BorderWidth;
             padding.Y -= drawStyle.BorderWidth;
             double phi;
@@ -190,14 +212,16 @@ namespace ItemAlert
             var rectUV = MathHepler.GetDirectionsUV(phi, distance);
             var rectangleF = new RectangleF(position.X - padding.X - compassOffset + 6, position.Y + padding.Y, textSize.Y, textSize.Y);
             Graphics.DrawImage("directions.png", rectangleF, rectUV);
+
             if (iconSize > 0)
             {
                 const float ICONS_IN_SPRITE = 4;
                 var iconX = drawStyle.IconIndex / ICONS_IN_SPRITE;
                 var topLeft = new System.Numerics.Vector2(textPos.X - iconSize - textSize.X, textPos.Y);
                 var topLeftUv = new System.Numerics.Vector2(iconX, 0);
+
                 Graphics.DrawImageGui("item_icons.png", topLeft, topLeft.Translate(iconSize, iconSize), topLeftUv,
-                                      topLeftUv.Translate((drawStyle.IconIndex + 1) / ICONS_IN_SPRITE - iconX, 1));
+                    topLeftUv.Translate((drawStyle.IconIndex + 1) / ICONS_IN_SPRITE - iconX, 1));
             }
 
             if (drawStyle.BorderWidth > 0) Graphics.DrawFrame(boxRect, drawStyle.BorderColor, drawStyle.BorderWidth);
@@ -205,12 +229,14 @@ namespace ItemAlert
             return new Vector2(fullWidth, fullHeight);
         }
 
-        public override void EntityAdded(Entity Entity) {
+        public override void EntityAdded(Entity Entity)
+        {
             if (Settings.Enable && !TownOrHideout && Entity.Type == EntityType.WorldItem)
             {
                 Entity.OnUpdate += (sender, entity) =>
                 {
                     var item = entity.GetComponent<WorldItem>()?.ItemEntity;
+
                     if (!string.IsNullOrEmpty(Settings.FilePath) && item != null)
                     {
                         if (!item.Path.StartsWith("Meta")) return;
@@ -218,18 +244,18 @@ namespace ItemAlert
                         queueUpdatedItems.Enqueue(entity);
                     }
                 };
+
                 queueOfWorldItems.Enqueue(Entity);
             }
         }
 
-
-        private bool TownOrHideout = false;
-
-        public override void AreaChange(AreaInstance area) {
+        public override void AreaChange(AreaInstance area)
+        {
             lock (locker)
             {
                 TownOrHideout = area.IsHideout || area.IsTown;
                 queueOfWorldItems.Clear();
+
                 while (queueUpdatedItems.TryDequeue(out _))
                 {
                 }
@@ -238,9 +264,12 @@ namespace ItemAlert
             }
         }
 
-        private void PrepareForDrawingAndPlaySound(Entity entity, AlertDrawStyle drawStyle) {
+        private void PrepareForDrawingAndPlaySound(Entity entity, AlertDrawStyle drawStyle)
+        {
             ItemIcon icon;
+
             if (Settings.UseDiamond)
+            {
                 icon = new ItemIcon(
                     entity,
                     new HudTexture("Icons.png")
@@ -248,21 +277,23 @@ namespace ItemAlert
                         Color = Settings.LootIconBorderColor ? drawStyle.BackgroundColor : drawStyle.TextColor,
                         UV = SpriteHelper.GetUV(MapIconsIndex.LootFilterLargeCyanStar)
                     }, () => Settings.ShowItemOnMap, GameController, Settings);
+            }
             else
+            {
                 icon = new ItemIcon(
                     entity,
                     new HudTexture("currency.png") {Color = Settings.LootIconBorderColor ? drawStyle.BackgroundColor : drawStyle.TextColor},
                     () => Settings.ShowItemOnMap, GameController, Settings);
+            }
 
             entity.SetHudComponent<BaseIcon>(icon);
 
             if (Settings.WithSound)
-            {
                 GameController.SoundController.PlaySound("alert");
-            }
         }
 
-        private void PoeFilterInit(string path) {
+        private void PoeFilterInit(string path)
+        {
             using (new PerformanceTimer("@@PoeFilterInit"))
             {
                 try
@@ -292,8 +323,10 @@ namespace ItemAlert
                 {
                     Settings.FilePath.Value = string.Empty;
                     Settings.Alternative.Value = false;
+
                     MessageBox.Show($"Line: {ex.Line}:{ex.CharPositionInLine}, " + $"{ex.Message}", "Error", MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error);
+                        MessageBoxIcon.Error);
+
                     visitor = null;
                 }
                 catch (Exception ex)

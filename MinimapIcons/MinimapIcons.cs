@@ -2,25 +2,28 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
+using ExileCore;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
+using ExileCore.Shared.Abstract;
+using ExileCore.Shared.Cache;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using JM.LinqFaster;
-using Shared;
-using Shared.Helpers;
-using Shared.Interfaces;
-using PoEMemory;
-using PoEMemory.Components;
-using Shared.Abstract;
-using Shared.Enums;
 using SharpDX;
-using Map = PoEMemory.Elements.Map;
-using Vector2 = SharpDX.Vector2;
+using Map = ExileCore.PoEMemory.Elements.Map;
 
 namespace MinimapIcons
 {
     public class MinimapIcons : BaseSettingsPlugin<MapIconsSettings>
     {
-        private List<string> ignoreEntites = new List<string>()
+        private const string ALERT_CONFIG = "config\\new_mod_alerts.txt";
+        private readonly Dictionary<string, Size2> modIcons = new Dictionary<string, Size2>();
+        private CachedValue<float> _diag;
+        private CachedValue<RectangleF> _mapRect;
+
+        private List<string> ignoreEntites = new List<string>
         {
             "Metadata/Monsters/Frog/FrogGod/SilverPool",
             "Metadata/MiscellaneousObjects/WorldItem",
@@ -30,16 +33,14 @@ namespace MinimapIcons
             "Metadata/Monsters/Frog/FrogGod/SilverOrbFromMonsters"
         };
 
-        private Dictionary<string, Size2> modIcons = new Dictionary<string, Size2>();
-        private const string ALERT_CONFIG = "config\\new_mod_alerts.txt";
-        private CachedValue<RectangleF> _mapRect;
-
+        private IngameUIElements ingameStateIngameUi;
+        private float k;
+        private bool largeMap;
+        private float scale;
+        private Vector2 screentCenterCache;
         private RectangleF MapRect => _mapRect?.Value ?? (_mapRect = new TimeCache<RectangleF>(() => mapWindow.GetClientRect(), 100)).Value;
-
         private Map mapWindow => GameController.Game.IngameState.IngameUi.Map;
         private Camera camera => GameController.Game.IngameState.Camera;
-        private CachedValue<float> _diag;
-
         private float diag =>
             _diag?.Value ?? (_diag = new TimeCache<float>(() =>
             {
@@ -51,28 +52,27 @@ namespace MinimapIcons
 
                 return (float) Math.Sqrt(camera.Width * camera.Width + camera.Height * camera.Height);
             }, 100)).Value;
-
         private Vector2 screenCenter =>
             new Vector2(MapRect.Width / 2, MapRect.Height / 2 - 20) + new Vector2(MapRect.X, MapRect.Y) +
             new Vector2(mapWindow.LargeMapShiftX, mapWindow.LargeMapShiftY);
 
-        private float k = 0;
-        private float scale = 0;
-
-        public override void OnLoad() {
+        public override void OnLoad()
+        {
             LoadConfig();
             CanUseMultiThreading = true;
         }
 
-
-        public override bool Initialise() {
+        public override bool Initialise()
+        {
             Graphics.InitImage("sprites.png");
             Graphics.InitImage("Icons.png");
             return true;
         }
 
-        private void LoadConfig() {
+        private void LoadConfig()
+        {
             var readAllLines = File.ReadAllLines(ALERT_CONFIG);
+
             foreach (var readAllLine in readAllLines)
             {
                 if (readAllLine.StartsWith("#")) continue;
@@ -82,20 +82,17 @@ namespace MinimapIcons
             }
         }
 
-
-        public override Job Tick() {
-
+        public override Job Tick()
+        {
             if (Settings.MultiThreading)
-            {
                 return GameController.MultiThreadManager.AddJob(TickLogic, nameof(MinimapIcons));
-            }
+
             TickLogic();
             return null;
         }
 
-
-
-        void TickLogic() {
+        private void TickLogic()
+        {
             ingameStateIngameUi = GameController.Game.IngameState.IngameUi;
 
             if (ingameStateIngameUi.Map.SmallMiniMap.IsVisibleLocal)
@@ -114,28 +111,22 @@ namespace MinimapIcons
             scale = k / camera.Height * camera.Width * 3f / 4f / mapWindow.LargeMapZoom;
         }
 
-        private Vector2 screentCenterCache;
-        private IngameUIElements ingameStateIngameUi;
-
-        private bool largeMap = false;
-
-        public override void Render() {
+        public override void Render()
+        {
             if (!Settings.Enable.Value || !GameController.InGame || Settings.DrawOnlyOnLargeMap && !largeMap) return;
-
 
             if (ingameStateIngameUi.AtlasPanel.IsVisibleLocal || ingameStateIngameUi.DelveWindow.IsVisibleLocal ||
                 ingameStateIngameUi.TreePanel.IsVisibleLocal)
                 return;
 
-
             var playerPos = GameController.Player.GetComponent<Positioned>().GridPos;
             var posZ = GameController.Player.GetComponent<Render>().Pos.Z;
             var mapWindowLargeMapZoom = mapWindow.LargeMapZoom;
 
-        
             var baseIcons = GameController.EntityListWrapper.OnlyValidEntities
-                                          .SelectWhereF(x => x.GetHudComponent<BaseIcon>(), icon => icon != null).OrderByF(x => x.Priority)
-                                          .ToList();
+                .SelectWhereF(x => x.GetHudComponent<BaseIcon>(), icon => icon != null).OrderByF(x => x.Priority)
+                .ToList();
+
             foreach (var icon in baseIcons)
             {
                 if (icon.Entity.Type == EntityType.WorldItem)
@@ -149,10 +140,12 @@ namespace MinimapIcons
 
                 if (!icon.Show())
                     continue;
+
                 var component = icon?.Entity?.GetComponent<Render>();
                 if (component == null) continue;
                 var iconZ = component.Pos.Z;
                 Vector2 position;
+
                 if (largeMap)
                 {
                     position = screentCenterCache + MapIcon.DeltaInWorldToMinimapDelta(
@@ -171,29 +164,29 @@ namespace MinimapIcons
                 icon.DrawRect = new RectangleF(position.X - halfSize, position.Y - halfSize, size, size);
                 Graphics.DrawImage(iconValueMainTexture.FileName, icon.DrawRect, iconValueMainTexture.UV, iconValueMainTexture.Color);
 
-
                 if (icon.Hidden())
                 {
                     var s = icon.DrawRect.Width * 0.5f;
                     icon.DrawRect.Inflate(-s, -s);
+
                     Graphics.DrawImage(icon.MainTexture.FileName, icon.DrawRect,
-                                       SpriteHelper.GetUV(MapIconsIndex.LootFilterSmallCyanCircle), Color.White);
+                        SpriteHelper.GetUV(MapIconsIndex.LootFilterSmallCyanCircle), Color.White);
+
                     icon.DrawRect.Inflate(s, s);
                 }
-
 
                 if (!string.IsNullOrEmpty(icon.Text))
                     Graphics.DrawText(icon.Text, position.Translate(0, Settings.ZForText), FontAlign.Center);
             }
-
 
             if (Settings.DrawNotValid)
             {
                 for (var index = 0; index < GameController.EntityListWrapper.NotOnlyValidEntities.Count; index++)
                 {
                     var entity = GameController.EntityListWrapper.NotOnlyValidEntities[index];
-                    if(entity.Type==EntityType.WorldItem) continue;
+                    if (entity.Type == EntityType.WorldItem) continue;
                     var icon = entity.GetHudComponent<BaseIcon>();
+
                     if (icon != null && !entity.IsValid && icon.Show())
                     {
                         if (icon.Entity.Type == EntityType.WorldItem)
@@ -204,10 +197,13 @@ namespace MinimapIcons
 
                         if (icon.HasIngameIcon)
                             continue;
+
                         if (!icon.Show())
                             continue;
+
                         var iconZ = icon.Entity.Pos.Z;
                         Vector2 position;
+
                         if (largeMap)
                         {
                             position = screentCenterCache + MapIcon.DeltaInWorldToMinimapDelta(
@@ -226,20 +222,19 @@ namespace MinimapIcons
                         icon.DrawRect = new RectangleF(position.X - halfSize, position.Y - halfSize, size, size);
                         Graphics.DrawImage(iconValueMainTexture.FileName, icon.DrawRect, iconValueMainTexture.UV, iconValueMainTexture.Color);
 
-
                         if (icon.Hidden())
                         {
                             var s = icon.DrawRect.Width * 0.5f;
                             icon.DrawRect.Inflate(-s, -s);
+
                             Graphics.DrawImage(icon.MainTexture.FileName, icon.DrawRect,
                                 SpriteHelper.GetUV(MapIconsIndex.LootFilterSmallCyanCircle), Color.White);
+
                             icon.DrawRect.Inflate(s, s);
                         }
 
-
                         if (!string.IsNullOrEmpty(icon.Text))
                             Graphics.DrawText(icon.Text, position.Translate(0, Settings.ZForText), FontAlign.Center);
-
                     }
                 }
             }

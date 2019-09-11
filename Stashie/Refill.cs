@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Exile;
-using Shared.Nodes;
+using ExileCore;
+using ExileCore.Shared.Nodes;
 using SharpDX;
 
 namespace Stashie
@@ -18,7 +15,8 @@ namespace Stashie
         private const string SYMBOL_IGNORE = "#";
         private const string SYMBOL_IGNORE2 = "//";
 
-        public static List<RefillProcessor> Parse(string pluginDir) {
+        public static List<RefillProcessor> Parse(string pluginDir)
+        {
             var refills = new List<RefillProcessor>();
 
             var refillConfigPath = Path.Combine(pluginDir, REFILL_CONFIG);
@@ -55,6 +53,7 @@ namespace Stashie
                     DebugWindow.LogMsg(
                         $"Refill parser: Config line should have 4 parameters (ClassName,StackSize,InventoryX,InventoryY): {configLine}, Ignoring refill..",
                         10);
+
                     continue;
                 }
 
@@ -66,6 +65,7 @@ namespace Stashie
                     DebugWindow.LogMsg(
                         $"Refill parser: Can't parse StackSize from 2nd parameter in line: {configLine} (line num: {i + 1}), Ignoring refill..",
                         10);
+
                     continue;
                 }
 
@@ -74,6 +74,7 @@ namespace Stashie
                     DebugWindow.LogMsg(
                         $"Refill parser: Can't parse InventoryX from 3rd parameter in line: {configLine} (line num: {i + 1}), Ignoring refill..",
                         10);
+
                     continue;
                 }
 
@@ -82,6 +83,7 @@ namespace Stashie
                     DebugWindow.LogMsg(
                         $"Refill parser: InventoryX should be in range 1-12, current value: {newRefill.InventPos.X}  (line num: {i + 1}), Ignoring refill..",
                         10);
+
                     continue;
                 }
 
@@ -90,6 +92,7 @@ namespace Stashie
                     DebugWindow.LogMsg(
                         $"Refill parser: Can't parse InventoryY from 4th parameter in line: {configLine} (line num: {i + 1}), Ignoring refill..",
                         10);
+
                     continue;
                 }
 
@@ -98,6 +101,7 @@ namespace Stashie
                     DebugWindow.LogMsg(
                         $"Refill parser: InventPosY should be in range 1-5, current value: {newRefill.InventPos.Y} (line num: {i + 1}), Ignoring refill..",
                         10);
+
                     continue;
                 }
 
@@ -111,7 +115,8 @@ namespace Stashie
             return refills;
         }
 
-        private static void TrimName(ref string name) {
+        private static void TrimName(ref string name)
+        {
             name = name.TrimEnd(' ');
             name = name.TrimStart(' ');
         }
@@ -119,25 +124,25 @@ namespace Stashie
 
     public class RefillProcessor
     {
-        public string MenuName;
-        public string CurrencyClass;
-        public int StackSize;
-        public Point InventPos;
         public RangeNode<int> AmountOption;
+        public Vector2 ClickPos;
+        public string CurrencyClass;
+        public Point InventPos;
+        public string MenuName;
 
         //Temp values:
         public int OwnedCount;
+        public int StackSize;
 
-        public Vector2 ClickPos;
-
-        public void Clear() => OwnedCount = 0;
+        public void Clear()
+        {
+            OwnedCount = 0;
+        }
     }
-
 
     public class RefillSettings
     {
-        public string RefillName;
-
         public int Amount;
+        public string RefillName;
     }
 }

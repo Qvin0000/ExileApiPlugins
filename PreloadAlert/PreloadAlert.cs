@@ -1,53 +1,64 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Exile;
+using ExileCore;
+using ExileCore.PoEMemory;
+using ExileCore.Shared;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using ImGuiNET;
 using Newtonsoft.Json;
-using Shared;
-using Shared.Helpers;
-using PoEMemory;
-using PoEMemory.Components;
-using Shared.Enums;
-using Shared.Static;
 using SharpDX;
-using Vector4 = System.Numerics.Vector4;
+using Vector2 = System.Numerics.Vector2;
 
 namespace PreloadAlert
 {
     public class PreloadAlert : BaseSettingsPlugin<PreloadAlertSettings>
     {
-        private readonly object _locker = new object();
-        private Dictionary<string, PreloadConfigLine> alerts { get; set; } = new Dictionary<string, PreloadConfigLine>();
+        private const string PRELOAD_ALERTS = "config/preload_alerts.txt";
+        private const string PRELOAD_ALERTS_PERSONAL = "config/preload_alerts_personal.txt";
         public static Dictionary<string, PreloadConfigLine> Essences;
         public static Dictionary<string, PreloadConfigLine> PerandusLeague;
         public static Dictionary<string, PreloadConfigLine> Strongboxes;
         public static Dictionary<string, PreloadConfigLine> Preload;
         public static Dictionary<string, PreloadConfigLine> Bestiary;
-        private List<PreloadConfigLine> DrawAlers = new List<PreloadConfigLine>();
+        public static Color AreaNameColor;
+        private readonly object _locker = new object();
         private Dictionary<string, PreloadConfigLine> alertStrings;
-        private Dictionary<string, PreloadConfigLine> personalAlertStrings;
-        private bool foundSpecificPerandusChest = false;
-        private bool essencefound = false;
+        private bool canRender;
+        private DebugInformation debugInformation;
+        private List<PreloadConfigLine> DrawAlers = new List<PreloadConfigLine>();
+        private bool essencefound;
+        private readonly List<long> filesPtr = new List<long>();
+        private bool foundSpecificPerandusChest;
         private bool holdKey = false;
         private bool isAreaChanged = false;
-        public static Color AreaNameColor = new Color();
-        private const string PRELOAD_ALERTS = "config/preload_alerts.txt";
-        private const string PRELOAD_ALERTS_PERSONAL = "config/preload_alerts_personal.txt";
-        public PreloadAlert() => Order = 2;
+        private bool isLoading;
+        private Vector2 lastLine;
+        private float maxWidth;
+        private Dictionary<string, PreloadConfigLine> personalAlertStrings;
+        private readonly List<string> PreloadDebug = new List<string>();
+        private Action PreloadDebugAction;
+        private bool working;
 
-        private bool working = false;
+        public PreloadAlert()
+        {
+            Order = 2;
+        }
+
+        private Dictionary<string, PreloadConfigLine> alerts { get; } = new Dictionary<string, PreloadConfigLine>();
+        private Action<string, Color> AddPreload => ExternalPreloads;
 
         //Need more test because different result with old method. Most of diff its Art/ and others but sometimes see Metadata/parti...Probably async loads
-        private void ParseByFiles(Dictionary<string, FileInformation> dictionary) {
+        private void ParseByFiles(Dictionary<string, FileInformation> dictionary)
+        {
             if (working) return;
             working = true;
+
             Task.Run(() =>
             {
                 debugInformation.TickAction(() =>
@@ -78,20 +89,18 @@ namespace PreloadAlert
                         DrawAlers = alerts.OrderBy(x => x.Value.Text).Select(x => x.Value).ToList();
                     }
                 });
+
                 working = false;
             });
         }
 
-        private DebugInformation debugInformation;
-        private List<long> filesPtr = new List<long>();
-        private List<string> PreloadDebug = new List<string>();
-        private Action PreloadDebugAction;
-
-        public override void DrawSettings() {
+        public override void DrawSettings()
+        {
             if (ImGui.Button("Dump preloads"))
             {
                 var path = Path.Combine(DirectoryFullName, "Dumps",
-                                        $"{GameController.Area.CurrentArea.Name} ({DateTime.Now}) [{GameController.Area.CurrentArea.Hash}].txt");
+                    $"{GameController.Area.CurrentArea.Name} ({DateTime.Now}) [{GameController.Area.CurrentArea.Hash}].txt");
+
                 File.WriteAllLines(path, PreloadDebug);
             }
 
@@ -99,8 +108,10 @@ namespace PreloadAlert
             {
                 var groupBy = PreloadDebug.OrderBy(x => x).GroupBy(x => x.IndexOf('/'));
                 var serializeObject = JsonConvert.SerializeObject(groupBy, Formatting.Indented);
+
                 var path = Path.Combine(DirectoryFullName, "Dumps",
-                                        $"{GameController.Area.CurrentArea.Name} ({DateTime.Now}) [{GameController.Area.CurrentArea.Hash}].txt");
+                    $"{GameController.Area.CurrentArea.Name} ({DateTime.Now}) [{GameController.Area.CurrentArea.Hash}].txt");
+
                 File.WriteAllText(path, serializeObject);
             }
 
@@ -108,6 +119,7 @@ namespace PreloadAlert
             {
                 var groupBy = PreloadDebug.OrderBy(x => x).GroupBy(x => x.IndexOf('/')).ToList();
                 var result = new Dictionary<string, List<string>>(groupBy.Count);
+
                 foreach (var gr in groupBy)
                 {
                     var g = gr.ToList();
@@ -116,35 +128,54 @@ namespace PreloadAlert
                     {
                         var list = new List<string>(g.Count);
                         result[g.First().Substring(0, gr.Key)] = list;
-                        foreach (var str in g) list.Add(str);
+
+                        foreach (var str in g)
+                        {
+                            list.Add(str);
+                        }
                     }
                     else
                     {
                         var list = new List<string>(g.Count);
                         var key = gr.Key.ToString();
                         result[key] = list;
-                        foreach (var str in g) list.Add(str);
+
+                        foreach (var str in g)
+                        {
+                            list.Add(str);
+                        }
                     }
                 }
 
                 groupBy = null;
+
                 PreloadDebugAction = () =>
                 {
                     foreach (var res in result)
+                    {
                         if (ImGui.TreeNode(res.Key))
                         {
-                            foreach (var str in res.Value) ImGui.Text(str);
+                            foreach (var str in res.Value)
+                            {
+                                ImGui.Text(str);
+                            }
+
                             ImGui.TreePop();
                         }
+                    }
 
                     ImGui.Separator();
+
                     if (alerts.Count > 0)
                     {
                         if (ImGui.TreeNode("DrawAlerts"))
                         {
                             foreach (var alert in DrawAlers)
+                            {
                                 ImGui.TextColored((alert.FastColor?.Invoke() ?? alert.Color ?? Settings.DefaultTextColor).ToImguiVec4(),
-                                                  $"{alert.Text}");
+                                    $"{alert.Text}");
+                            }
+
                             ImGui.TreePop();
                         }
                     }
@@ -156,12 +187,14 @@ namespace PreloadAlert
             base.DrawSettings();
         }
 
-        private void ExternalPreloads(string text, Color color) {
+        private void ExternalPreloads(string text, Color color)
+        {
             if (working)
             {
                 Task.Run(async () =>
                 {
                     var tries = 0;
+
                     while (working && tries < 20)
                     {
                         await Task.Delay(200);
@@ -171,6 +204,7 @@ namespace PreloadAlert
                     if (!working && tries < 20)
                     {
                         alerts.Add(text, new PreloadConfigLine {Text = text, FastColor = () => color});
+
                         lock (_locker)
                         {
                             DrawAlers = alerts.OrderBy(x => x.Value.Text).Select(x => x.Value).ToList();
@@ -181,6 +215,7 @@ namespace PreloadAlert
             else
             {
                 alerts.Add(text, new PreloadConfigLine {Text = text, FastColor = () => color});
+
                 lock (_locker)
                 {
                     DrawAlers = alerts.OrderBy(x => x.Value.Text).Select(x => x.Value).ToList();
@@ -188,26 +223,26 @@ namespace PreloadAlert
             }
         }
 
-        private Action<string, Color> AddPreload => ExternalPreloads;
-
-        public override void OnLoad() {
+        public override void OnLoad()
+        {
             alertStrings = LoadConfig("config/preload_alerts.txt");
             SetupPredefinedConfigs();
+
             if (File.Exists(PRELOAD_ALERTS_PERSONAL))
                 alertStrings = alertStrings.MergeLeft(LoadConfig(PRELOAD_ALERTS_PERSONAL));
             else
                 File.Create(PRELOAD_ALERTS_PERSONAL);
-
         }
 
-        public override bool Initialise() {
+        public override bool Initialise()
+        {
             GameController.PluginBridge.SaveMethod($"{nameof(PreloadAlert)}.{nameof(AddPreload)}", AddPreload);
             Graphics.InitImage("preload-start.png");
             Graphics.InitImage("preload-end.png");
             Graphics.InitImage("preload-new.png");
-         
+
             AreaNameColor = Settings.AreaTextColor;
-            
+
             debugInformation = new DebugInformation("Preload alert parsing", false);
             /*GameController.Files.LoadedFiles += (sender, dictionary) =>
             {
@@ -219,12 +254,11 @@ namespace PreloadAlert
             return true;
         }
 
-        private bool canRender = false;
-        private bool isLoading = false;
-
-        public override void AreaChange(AreaInstance area) {
+        public override void AreaChange(AreaInstance area)
+        {
             isLoading = true;
             alerts.Clear();
+
             lock (_locker)
             {
                 DrawAlers.Clear();
@@ -236,11 +270,13 @@ namespace PreloadAlert
             isLoading = false;
         }
 
-        private IEnumerator Parse() {
+        private IEnumerator Parse()
+        {
             if (!working)
             {
                 working = true;
                 PreloadDebug.Clear();
+
                 Task.Run(() =>
                 {
                     debugInformation.TickAction(() =>
@@ -251,9 +287,11 @@ namespace PreloadAlert
                         var areaChangeCount = GameController.Game.AreaChangeCount;
                         var listIterator = memory.Read<long>(pFileRoot + 0x8, 0x0);
                         filesPtr.Clear();
+
                         for (var i = 0; i < count; i++)
                         {
                             listIterator = memory.Read<long>(listIterator);
+
                             if (listIterator == 0)
                             {
                                 //MessageBox.Show("address is null, something has gone wrong, start over");
@@ -271,6 +309,7 @@ namespace PreloadAlert
                                 try
                                 {
                                     var fileAddr = memory.Read<long>(iter + 0x18);
+
                                     //some magic number
 
                                     if (memory.Read<long>(iter + 0x10) != 0 && memory.Read<int>(fileAddr + 0x48) == areaChangeCount)
@@ -279,9 +318,11 @@ namespace PreloadAlert
                                         if (size < 7) return;
 
                                         var fileNamePointer = memory.Read<long>(iter + 0x10);
+
                                         var text = RemoteMemoryObject.Cache.StringCache.Read($"{nameof(PreloadAlert)}{fileNamePointer}",
-                                                                                             () => memory.ReadStringU(
-                                                                                                 fileNamePointer, size * 2));
+                                            () => memory.ReadStringU(
+                                                fileNamePointer, size * 2));
+
                                         if (Settings.LoadOnlyMetadata && text[0] != 'M') return;
                                         if (text.Contains('@')) text = text.Split('@')[0];
 
@@ -302,7 +343,9 @@ namespace PreloadAlert
                         else
                         {
                             string text;
+
                             foreach (var iter in filesPtr)
+                            {
                                 try
                                 {
                                     var fileAddr = memory.Read<long>(iter + 0x18);
@@ -313,9 +356,11 @@ namespace PreloadAlert
                                         if (size < 7) continue;
 
                                         var fileNamePointer = memory.Read<long>(iter + 0x10);
+
                                         text = RemoteMemoryObject.Cache.StringCache.Read($"{nameof(PreloadAlert)}{fileNamePointer}",
-                                                                                         () => memory.ReadStringU(
-                                                                                             fileNamePointer, size * 2));
+                                            () => memory.ReadStringU(
+                                                fileNamePointer, size * 2));
+
                                         if (Settings.LoadOnlyMetadata && text[0] != 'M') continue;
                                         if (text.Contains('@')) text = text.Split('@')[0];
                                         PreloadDebug.Add(text);
@@ -326,6 +371,7 @@ namespace PreloadAlert
                                 {
                                     DebugWindow.LogError($"{nameof(PreloadAlert)} -> {e}");
                                 }
+                            }
                         }
 
                         lock (_locker)
@@ -333,6 +379,7 @@ namespace PreloadAlert
                             DrawAlers = alerts.OrderBy(x => x.Value.Text).Select(x => x.Value).ToList();
                         }
                     });
+
                     working = false;
                 });
             }
@@ -340,9 +387,10 @@ namespace PreloadAlert
             yield return null;
         }
 
-
-        public override Job Tick() {
+        public override Job Tick()
+        {
             canRender = true;
+
             if (!Settings.Enable || GameController.Area.CurrentArea != null && GameController.Area.CurrentArea.IsTown ||
                 GameController.IsLoading || !GameController.InGame)
             {
@@ -367,27 +415,23 @@ namespace PreloadAlert
                 return null;
             }
 
-
             if (UIHover?.Tooltip != null && (!UIHover.IsValid || UIHover.Address == 0x00 || UIHover.Tooltip.Address == 0x00 ||
                                              !UIHover.Tooltip.IsVisibleLocal))
                 canRender = true;
-
 
             if (Input.GetKeyState(Keys.F5)) AreaChange(GameController.Area.CurrentArea);
 
             return null;
         }
 
-        private System.Numerics.Vector2 lastLine;
-
-        private float maxWidth;
-
-        public override void Render() {
+        public override void Render()
+        {
             PreloadDebugAction?.Invoke();
             if (!canRender) return;
             var startDrawPoint = GameController.LeftPanel.StartDrawPoint;
             var f = startDrawPoint.Y;
             maxWidth = 0;
+
             if (isLoading)
             {
                 lastLine = Graphics.DrawText("Loading...", startDrawPoint, Color.Orange, FontAlign.Right);
@@ -399,30 +443,37 @@ namespace PreloadAlert
                 foreach (var line in DrawAlers)
                 {
                     lastLine = Graphics.DrawText(line.Text, startDrawPoint,
-                                                 line.FastColor?.Invoke() ?? line.Color ?? Settings.DefaultTextColor, FontAlign.Right);
+                        line.FastColor?.Invoke() ?? line.Color ?? Settings.DefaultTextColor, FontAlign.Right);
+
                     startDrawPoint.Y += lastLine.Y;
                     maxWidth = Math.Max(lastLine.X, maxWidth);
                 }
             }
 
             var bounds = new RectangleF(GameController.LeftPanel.StartDrawPoint.X - maxWidth - 55,
-                                        GameController.LeftPanel.StartDrawPoint.Y, maxWidth + 60, startDrawPoint.Y - f);
+                GameController.LeftPanel.StartDrawPoint.Y, maxWidth + 60, startDrawPoint.Y - f);
+
             Graphics.DrawImage("preload-new.png", bounds, Settings.BackgroundColor);
             GameController.LeftPanel.StartDrawPoint = startDrawPoint;
         }
 
-        public Dictionary<string, PreloadConfigLine> LoadConfig(string path) =>
-            LoadConfigBase(path, 3).ToDictionary(line => line[0], line =>
+        public Dictionary<string, PreloadConfigLine> LoadConfig(string path)
+        {
+            return LoadConfigBase(path, 3).ToDictionary(line => line[0], line =>
             {
                 var preloadAlerConfigLine = new PreloadConfigLine {Text = line[1], Color = line.ConfigColorValueExtractor(2)};
                 return preloadAlerConfigLine;
             });
+        }
 
-        protected static IEnumerable<string[]> LoadConfigBase(string path, int columnsCount = 2) =>
-            File.ReadAllLines(path).Where(line => !string.IsNullOrWhiteSpace(line) && line.IndexOf(';') >= 0 && !line.StartsWith("#"))
+        protected static IEnumerable<string[]> LoadConfigBase(string path, int columnsCount = 2)
+        {
+            return File.ReadAllLines(path).Where(line => !string.IsNullOrWhiteSpace(line) && line.IndexOf(';') >= 0 && !line.StartsWith("#"))
                 .Select(line => line.Split(new[] {';'}, columnsCount).Select(parts => parts.Trim()).ToArray());
+        }
 
-        private void SetupPredefinedConfigs() {
+        private void SetupPredefinedConfigs()
+        {
             Essences = new Dictionary<string, PreloadConfigLine>
             {
                 {
@@ -772,26 +823,15 @@ namespace PreloadAlert
                 },
                 {"ExileWitch1", new PreloadConfigLine {Text = "Exile Minara Anenima", FastColor = () => Settings.MinaraAnenima}},
                 {"ExileWitch2", new PreloadConfigLine {Text = "Exile Igna Phoenix", FastColor = () => Settings.IgnaPhoenix}},
-                {"ExileWitch4", new PreloadConfigLine {Text = "Exile Dena Lorenni", FastColor = () => Settings.DenaLorenni}},
+                {"ExileWitch4", new PreloadConfigLine {Text = "Exile Dena Lorenni", FastColor = () => Settings.DenaLorenni}}
             };
 
             //Old stuff from bestiary league
-            Bestiary = new Dictionary<string, PreloadConfigLine>
-            {
-                /*{"Metadata/Monsters/LeagueBestiary/ModDaemonBloodRaven1", new PreloadConfigLine {Text = "Attack Speed Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonCorpseEruption", new PreloadConfigLine  {Text = "Strength Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonFire1", new PreloadConfigLine  {Text = "Fire Resistance Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonGraspingPincers1", new PreloadConfigLine  {Text = "Spell Damage Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonParasiticSquid1", new PreloadConfigLine  {Text = "All Attributes Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonPouncingShade1", new PreloadConfigLine  {Text = "Into Another Random Unique Item Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonSandLeaperExplode1", new PreloadConfigLine  {Text = "Lightning Resistance Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonStampede1", new PreloadConfigLine  {Text = "Movement Speed Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonVultureBomb1", new PreloadConfigLine  {Text = "Critical Strike Chance Recipe", FastColor = () => Color.Red}},
-                {"Metadata/Monsters/LeagueBestiary/ModDaemonFireSnakeBoss", new PreloadConfigLine  {Text = "WTF THIS?", FastColor = () => Color.Red}},*/
-            };
+            Bestiary = new Dictionary<string, PreloadConfigLine>();
         }
 
-        private void CheckForPreload(string text) {
+        private void CheckForPreload(string text)
+        {
             if (alertStrings.ContainsKey(text))
             {
                 lock (_locker)
@@ -822,15 +862,17 @@ namespace PreloadAlert
                 return;
             }
 
-
             if (Settings.Essence)
             {
                 var essence_alert = Essences.Where(kv => text.StartsWith(kv.Key, StringComparison.OrdinalIgnoreCase)).Select(kv => kv.Value)
-                                            .FirstOrDefault();
+                    .FirstOrDefault();
+
                 if (essence_alert != null)
                 {
                     essencefound = true;
+
                     if (alerts.ContainsKey("Remnant of Corruption"))
+
                         //TODO: TEST ESSENCE
                     {
                         lock (_locker)
@@ -859,12 +901,13 @@ namespace PreloadAlert
                 }
             }
 
-
             var perandus_alert = PerandusLeague.Where(kv => text.StartsWith(kv.Key, StringComparison.OrdinalIgnoreCase))
-                                               .Select(kv => kv.Value).FirstOrDefault();
+                .Select(kv => kv.Value).FirstOrDefault();
+
             if (perandus_alert != null && Settings.PerandusBoxes)
             {
                 foundSpecificPerandusChest = true;
+
                 if (alerts.ContainsKey("Unknown Perandus Chest"))
                 {
                     lock (_locker)
@@ -892,9 +935,9 @@ namespace PreloadAlert
                 }
             }
 
-
             var _alert = Strongboxes.Where(kv => text.StartsWith(kv.Key, StringComparison.OrdinalIgnoreCase)).Select(kv => kv.Value)
-                                    .FirstOrDefault();
+                .FirstOrDefault();
+
             if (_alert != null && Settings.Strongboxes)
             {
                 lock (_locker)
@@ -905,17 +948,15 @@ namespace PreloadAlert
                 return;
             }
 
-
             var alert = Preload.Where(kv => text.EndsWith(kv.Key, StringComparison.OrdinalIgnoreCase)).Select(kv => kv.Value)
-                               .FirstOrDefault();
+                .FirstOrDefault();
+
             if (alert != null && Settings.Exiles)
             {
                 lock (_locker)
                 {
                     alerts[alert.Text] = alert;
                 }
-
-                return;
             }
         }
     }

@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>A:\Chrome\Plugins\Compiled\DPSMeter\</OutputPath>
+    <OutputPath>..\..\..\..\PoeHelper\Plugins\Compiled\DPSMeter\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="JM.LinqFaster, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\LinqFaster.1.0.0\lib\net461\JM.LinqFaster.dll</HintPath>
+      <HintPath>..\..\..\packages\LinqFaster.1.0.0\lib\net461\JM.LinqFaster.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SharpDX, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
@@ -59,7 +59,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj">
+    <ProjectReference Include="..\..\..\Core\Core.csproj">
       <Project>{5539d732-34a7-44ab-9e28-116c3429b12a}</Project>
       <Name>Core</Name>
       <Private>False</Private>

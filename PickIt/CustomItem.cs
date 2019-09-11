@@ -1,49 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
-using Basic;
-using Basic.Models;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
-using PoEMemory;
-using PoEMemory.Components;
-using PoEMemory.Elements;
-using Shared.Enums;
-using Map = PoEMemory.Components.Map;
+using ExileCore;
+using ExileCore.PoEMemory;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.Elements;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared.Enums;
+using Map = ExileCore.PoEMemory.Components.Map;
 
 namespace PickIt
 {
     public class CustomItem
     {
-        public string BaseName { get; private set; } = "";
-        public string ClassName { get; private set; } = "";
-        public LabelOnGround LabelOnGround { get; private set; }
-        public float Distance { get; }
-        public Entity GroundItem { get; private set; }
-        public int Height { get; private set; }
-        public bool IsElder { get; private set; }
-        public bool IsIdentified { get; private set; }
-        public bool IsRGB { get; private set; }
-        public bool IsShaper { get; private set; }
-        public bool IsWeapon { get; private set; }
-        public int ItemLevel { get; private set; }
-        public int LargestLink { get; private set; }
-        public int MapTier { get; private set; }
-        public string Path { get; private set; }
-        public int Quality { get; private set; }
-        public ItemRarity Rarity { get; private set; }
-        public int Sockets { get; private set; }
-        public int Width { get; private set; }
-        public bool IsFractured { get; private set; }
-
         public Func<bool> IsTargeted;
+        public bool IsValid;
 
-        public bool IsValid = false;
-
-        public int Weight { get; set; }
-
-        public CustomItem(LabelOnGround item, FilesContainer fs, float distance, Dictionary<string, int> weightsRules) {
+        public CustomItem(LabelOnGround item, FilesContainer fs, float distance, Dictionary<string, int> weightsRules)
+        {
             LabelOnGround = item;
             Distance = distance;
             var itemItemOnGround = item.ItemOnGround;
@@ -53,6 +27,7 @@ namespace PickIt
             GroundItem = groundItem;
             Path = groundItem?.Path;
             if (GroundItem == null) return;
+
             if (Path != null && Path.Length < 1)
             {
                 DebugWindow.LogMsg($"World: {worldItem.Address:X} P: {Path}", 2);
@@ -68,7 +43,6 @@ namespace PickIt
 
             var baseItemType = fs.BaseItemTypes.Translate(Path);
 
-
             if (baseItemType != null)
             {
                 ClassName = baseItemType.ClassName;
@@ -77,7 +51,6 @@ namespace PickIt
                 Height = baseItemType.Height;
                 if (weightsRules.TryGetValue(BaseName, out var w)) Weight = w;
             }
-
 
             var WeaponClass = new List<string>
             {
@@ -95,6 +68,7 @@ namespace PickIt
                 "Staff",
                 "Wand"
             };
+
             if (GroundItem.HasComponent<Quality>())
             {
                 var quality = GroundItem.GetComponent<Quality>();
@@ -131,6 +105,31 @@ namespace PickIt
             IsValid = true;
         }
 
-        public override string ToString() => $"{BaseName} ({ClassName}) W: {Weight} Dist: {Distance}";
+        public string BaseName { get; } = "";
+        public string ClassName { get; } = "";
+        public LabelOnGround LabelOnGround { get; }
+        public float Distance { get; }
+        public Entity GroundItem { get; }
+        public int Height { get; }
+        public bool IsElder { get; }
+        public bool IsIdentified { get; }
+        public bool IsRGB { get; }
+        public bool IsShaper { get; }
+        public bool IsWeapon { get; }
+        public int ItemLevel { get; }
+        public int LargestLink { get; }
+        public int MapTier { get; }
+        public string Path { get; }
+        public int Quality { get; }
+        public ItemRarity Rarity { get; }
+        public int Sockets { get; }
+        public int Width { get; }
+        public bool IsFractured { get; }
+        public int Weight { get; set; }
+
+        public override string ToString()
+        {
+            return $"{BaseName} ({ClassName}) W: {Weight} Dist: {Distance}";
+        }
     }
 }

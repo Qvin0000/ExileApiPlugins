@@ -4,6 +4,9 @@
     {
         public bool BIdentified;
 
-        public bool CompareItem(ItemData itemData) => itemData.BIdentified == BIdentified;
+        public bool CompareItem(ItemData itemData)
+        {
+            return itemData.BIdentified == BIdentified;
+        }
     }
 }

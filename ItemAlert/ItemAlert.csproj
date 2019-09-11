@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\PoeHelper\Plugins\Compiled\ItemAlert\</OutputPath>
+    <OutputPath>..\..\..\..\PoeHelper\Plugins\Compiled\ItemAlert\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -32,15 +32,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Antlr4.Runtime, Version=4.6.0.0, Culture=neutral, PublicKeyToken=09abb75b9ed49849, processorArchitecture=MSIL">
-      <HintPath>..\packages\Antlr4.Runtime.4.6.6\lib\net45\Antlr4.Runtime.dll</HintPath>
+      <HintPath>..\..\..\packages\Antlr4.Runtime.4.6.4\lib\net45\Antlr4.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="JM.LinqFaster, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\packages\LinqFaster.1.0.0\lib\net461\JM.LinqFaster.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="JM.LinqFaster, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\LinqFaster.1.0.0\lib\net461\JM.LinqFaster.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="PoeFilterParser, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\PoeHelper\PoeFilterParser.dll</HintPath>
+    <Reference Include="PoeFilterParser, Version=1.0.42.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\PoeFilterParser.1.0.42\lib\net471\PoeFilterParser.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="SharpDX, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpDX.4.2.0\lib\net45\SharpDX.dll</HintPath>
@@ -74,7 +75,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj">
+    <ProjectReference Include="..\..\..\..\ExileApi\Core\Core.csproj">
       <Project>{5539d732-34a7-44ab-9e28-116c3429b12a}</Project>
       <Name>Core</Name>
       <Private>False</Private>

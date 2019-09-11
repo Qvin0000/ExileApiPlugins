@@ -1,17 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Basic;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
-using Shared.Abstract;
-using Shared;
-using Shared.Helpers;
-using Shared.Interfaces;
+using ExileCore;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
+using ExileCore.Shared.Abstract;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using JM.LinqFaster;
-using PoEMemory.Components;
-using Shared;
-using Shared.Enums;
 using SharpDX;
 
 namespace IconsBuilder
@@ -19,18 +15,20 @@ namespace IconsBuilder
     public class MonsterIcon : BaseIcon
     {
         public MonsterIcon(Entity entity, GameController gameController, IconsBuilderSettings settings, Dictionary<string, Size2> modIcons)
-            : base(entity, settings) =>
+            : base(entity, settings)
+        {
             Update(entity, settings, modIcons);
-
+        }
 
         public long ID { get; set; }
 
-        public void Update(Entity entity, IconsBuilderSettings settings, Dictionary<string, Size2> modIcons) {
+        public void Update(Entity entity, IconsBuilderSettings settings, Dictionary<string, Size2> modIcons)
+        {
             Show = () => entity.IsAlive;
             ID = entity.Id;
 
-
             if (!_HasIngameIcon) MainTexture = new HudTexture("Icons.png");
+
             switch (Rarity)
             {
                 case MonsterRarity.White:
@@ -48,11 +46,13 @@ namespace IconsBuilder
                 default:
                     throw new ArgumentException(
                         $"{nameof(MonsterIcon)} wrong rarity for {entity.Path}. Dump: {entity.GetComponent<ObjectMagicProperties>().DumpObject()}");
+
                     break;
             }
 
             if (_HasIngameIcon && entity.HasComponent<MinimapIcon>() && !entity.GetComponent<MinimapIcon>().Name.Equals("NPC"))
                 return;
+
             if (!entity.IsHostile)
             {
                 if (!_HasIngameIcon)
@@ -69,6 +69,7 @@ namespace IconsBuilder
             else
             {
                 string modName = null;
+
                 if (entity.HasComponent<ObjectMagicProperties>())
                 {
                     var objectMagicProperties = entity.GetComponent<ObjectMagicProperties>();
@@ -82,7 +83,6 @@ namespace IconsBuilder
                         modName = mods.FirstOrDefaultF(modIcons.ContainsKey);
                     }
                 }
-
 
                 if (modName != null)
                 {

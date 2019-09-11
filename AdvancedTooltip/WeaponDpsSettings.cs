@@ -1,13 +1,13 @@
-using Shared.Interfaces;
-using Shared.Nodes;
-using Shared.Nodes;
+using ExileCore.Shared.Interfaces;
+using ExileCore.Shared.Nodes;
 using SharpDX;
 
 namespace AdvancedTooltip
 {
     public class WeaponDpsSettings : ISettings
     {
-        public WeaponDpsSettings() {
+        public WeaponDpsSettings()
+        {
             Enable = new ToggleNode(true);
             TextColor = new ColorBGRA(254, 192, 118, 255);
             DpsTextSize = new RangeNode<int>(16, 10, 50);
@@ -21,7 +21,6 @@ namespace AdvancedTooltip
             eDamageColor = new ColorBGRA(0, 255, 255, 255);
         }
 
-        public ToggleNode Enable { get; set; }
         public ColorNode TextColor { get; set; }
         public RangeNode<int> DpsTextSize { get; set; }
         public RangeNode<int> DpsNameTextSize { get; set; }
@@ -32,5 +31,6 @@ namespace AdvancedTooltip
         public ColorNode DmgChaosColor { get; set; }
         public ColorNode pDamageColor { get; set; }
         public ColorNode eDamageColor { get; set; }
+        public ToggleNode Enable { get; set; }
     }
 }

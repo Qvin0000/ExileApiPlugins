@@ -7,7 +7,6 @@
         public string SubmenuName { get; set; }
         public string Commands { get; set; }
         public int Index { get; set; }
-
         public bool AllowProcess => StashIndexNode.Index != -1;
     }
 }
