@@ -230,6 +230,11 @@ namespace PreloadAlert
                 DrawAlers.Clear();
             }
 
+            if (GameController.Area.CurrentArea.IsHideout && !Settings.ShowInHideout)
+            {
+                return;
+            }
+
             PreloadDebugAction = null;
             Core.ParallelRunner.Run(new Coroutine(Parse(), this, "Preload parse"));
 
