@@ -95,7 +95,6 @@ namespace ItemAlert
             var modsItemLevel = 0;
             var modsHaveFractured = false;
             var modsCountFractured = 0;
-            var anyEnchantment = false;
 
             if (!modsIsNull)
             {
@@ -154,7 +153,6 @@ namespace ItemAlert
                 var borderColor = Color.White;
                 var textColor = defaultTextColor;
                 var borderWidth = 1;
-                var sound = -1;
                 var statements = block.statement();
 
                 skip = false;

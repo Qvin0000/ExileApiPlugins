@@ -220,7 +220,6 @@ namespace DPSMeter
             drawText = Graphics.DrawText(hp, position, Settings.PeakFontColor, FontAlign.Right);
             position.Y += drawText.Y;
             positionLeft.Y += drawText.Y;
-            var width = 150;
             var bounds = new RectangleF(positionLeft.X - 50, startY + 3, measury.X + 50, position.Y - startY);
 
             Graphics.DrawImage("preload-new.png", bounds, Settings.BackgroundColor);
