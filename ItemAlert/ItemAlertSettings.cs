@@ -1,17 +1,16 @@
-﻿using Shared.Interfaces;
-using Shared.Nodes;
+﻿using ExileCore.Shared.Interfaces;
+using ExileCore.Shared.Nodes;
 
 namespace ItemAlert
 {
     public class ItemAlertSettings : ISettings
     {
-        public ToggleNode Enable { get; set; } = new ToggleNode(true);
+        public RangeNode<int> DimOtherByPercent = new RangeNode<int>(100, 1, 100);
         public ToggleNode Alternative { get; set; } = new ToggleNode(true);
         public ToggleNode ShowItemOnMap { get; set; } = new ToggleNode(true);
         public FileNode FilePath { get; set; } = "config/my.filter";
         public ToggleNode WithBorder { get; set; } = new ToggleNode(true);
         public ToggleNode WithSound { get; set; } = new ToggleNode(true);
-
         public RangeNode<int> LootIcon { get; set; } = new RangeNode<int>(7, 1, 50);
         public ToggleNode LootIconBorderColor { get; set; } = new ToggleNode(false);
         public RangeNode<int> ItemAlertUpdateTime { get; set; } = new RangeNode<int>(50, 10, 1000);
@@ -22,9 +21,8 @@ namespace ItemAlert
         public ToggleNode DimOtherByPercentToggle { get; set; } = new ToggleNode(true);
         public ToggleNode BorderSettings { get; set; } = new ToggleNode(true);
         public ToggleNode UseDiamond { get; set; } = new ToggleNode(true);
-        public ToggleNode MultiThreading { get; set; }= new ToggleNode(false);
-        public RangeNode<int> MultiThreadingWhenItemMoreThan { get; set; } = new RangeNode<int>(30,5,500);
-
-        public RangeNode<int> DimOtherByPercent = new RangeNode<int>(100, 1, 100);
+        public ToggleNode MultiThreading { get; set; } = new ToggleNode(false);
+        public RangeNode<int> MultiThreadingWhenItemMoreThan { get; set; } = new RangeNode<int>(30, 5, 500);
+        public ToggleNode Enable { get; set; } = new ToggleNode(true);
     }
 }

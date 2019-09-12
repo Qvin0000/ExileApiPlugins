@@ -1,12 +1,13 @@
 using System.Windows.Forms;
-using Shared.Interfaces;
-using Shared.Nodes;
+using ExileCore.Shared.Interfaces;
+using ExileCore.Shared.Nodes;
 
 namespace PickIt
 {
     public class PickItSettings : ISettings
     {
-        public PickItSettings() {
+        public PickItSettings()
+        {
             Enable = new ToggleNode(false);
             PickUpKey = Keys.F1;
             PickupRange = new RangeNode<int>(600, 1, 1000);
@@ -95,7 +96,6 @@ namespace PickIt
         public RangeNode<int> RareWeaponWidth { get; set; }
         public RangeNode<int> RareWeaponHeight { get; set; }
         public RangeNode<int> ItemCells { get; set; }
-
         public RangeNode<int> RareWeaponilvl { get; set; }
         public EmptyNode LinkSocketRgbEmptyNode { get; set; }
         public ToggleNode Sockets { get; set; }
@@ -119,13 +119,10 @@ namespace PickIt
         public ToggleNode GroundChests { get; set; }
         public ToggleNode LeftClickToggleNode { get; set; }
         public ToggleNode OverrideItemPickup { get; set; }
-
         public string NormalRuleFile { get; set; }
         public string MagicRuleFile { get; set; }
         public string RareRuleFile { get; set; }
         public string UniqueRuleFile { get; set; }
-
-
         public RangeNode<float> MouseSpeed { get; set; }
         public ToggleNode ReturnMouseToBeforeClickPosition { get; set; } = new ToggleNode(true);
         public RangeNode<int> TimeBeforeNewClick { get; set; } = new RangeNode<int>(500, 0, 1500);

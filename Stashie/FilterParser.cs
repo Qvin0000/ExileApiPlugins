@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Basic;
-using Exile;
+using ExileCore;
 
 namespace Stashie
 {
@@ -18,31 +17,25 @@ namespace Stashie
 
         //String compare
         private const string PARAMETER_CLASSNAME = "classname";
-
         private const string PARAMETER_BASENAME = "basename";
         private const string PARAMETER_PATH = "path";
 
         //Number compare
         private const string PARAMETER_QUALITY = "itemquality";
-
         private const string PARAMETER_RARITY = "rarity";
         private const string PARAMETER_ILVL = "ilvl";
         private const string PARAMETER_MapTier = "tier";
 
         //Boolean
         private const string PARAMETER_IDENTIFIED = "identified";
-
         private const string PARAMETER_ISELDER = "Elder";
         private const string PARAMETER_ISSHAPER = "Shaper";
-
         private const string PARAMETER_ISFRACTURED = "Fractured";
 
         //Operations
         private const string OPERATION_NONEQUALITY = "!=";
-
         private const string OPERATION_LESSEQUAL = "<=";
         private const string OPERATION_BIGGERQUAL = ">=";
-
         private const string OPERATION_EQUALITY = "=";
         private const string OPERATION_BIGGER = ">";
         private const string OPERATION_LESS = "<";
@@ -52,10 +45,11 @@ namespace Stashie
         private static readonly string[] Operations =
         {
             OPERATION_NONEQUALITY, OPERATION_LESSEQUAL, OPERATION_BIGGERQUAL, OPERATION_NOTCONTAINS, OPERATION_EQUALITY,
-            OPERATION_BIGGER, OPERATION_LESS, OPERATION_CONTAINS,
+            OPERATION_BIGGER, OPERATION_LESS, OPERATION_CONTAINS
         };
 
-        public static List<CustomFilter> Parse(string[] filtersLines) {
+        public static List<CustomFilter> Parse(string[] filtersLines)
+        {
             var allFilters = new List<CustomFilter>();
 
             for (var i = 0; i < filtersLines.Length; ++i)
@@ -70,6 +64,7 @@ namespace Stashie
                 if (filterLine.Replace(" ", "").Length == 0) continue;
 
                 var nameIndex = filterLine.IndexOf(CYMBOL_NAMEDIVIDE);
+
                 if (nameIndex == -1)
                 {
                     DebugWindow.LogMsg("Filter parser: Can't find filter name in line: " + (i + 1), 5);
@@ -81,6 +76,7 @@ namespace Stashie
                 var filterCommandsLine = filterLine.Substring(nameIndex + 1);
 
                 var submenuIndex = filterCommandsLine.IndexOf(CYMBOL_SUBMENUNAME);
+
                 if (submenuIndex != -1)
                 {
                     newFilter.SubmenuName = filterCommandsLine.Substring(submenuIndex + 1);
@@ -126,7 +122,8 @@ namespace Stashie
             return allFilters;
         }
 
-        private static bool ProcessCommand(BaseFilter newFilter, string command) {
+        private static bool ProcessCommand(BaseFilter newFilter, string command)
+        {
             command = command.Trim();
 
             if (command.Contains(PARAMETER_IDENTIFIED))
@@ -152,7 +149,7 @@ namespace Stashie
 
             if (command.Contains(PARAMETER_ISFRACTURED))
             {
-                var synthesisCommand = new FracturedItemFiler() {isFractured = command[0] != CYMBOL_NOT};
+                var synthesisCommand = new FracturedItemFiler {isFractured = command[0] != CYMBOL_NOT};
                 newFilter.Filters.Add(synthesisCommand);
                 return true;
             }
@@ -166,7 +163,6 @@ namespace Stashie
                 DebugWindow.LogMsg("Filter parser: Can't parse filter part: " + command, 5);
                 return false;
             }
-
 
             var stringComp = new FilterParameterCompare {CompareString = value};
 
@@ -219,13 +215,13 @@ namespace Stashie
                     stringComp.CompDeleg = data => !stringComp.StringParameter(data).Contains(stringComp.CompareString);
                     break;
 
-
                 case OPERATION_BIGGER:
                     if (stringComp.IntParameter == null)
                     {
                         DebugWindow.LogMsg(
                             $"Filter parser error: Can't compare string parameter with {OPERATION_BIGGER} (numerical) operation. Statement: {command}",
                             10);
+
                         return false;
                     }
 
@@ -237,6 +233,7 @@ namespace Stashie
                         DebugWindow.LogMsg(
                             $"Filter parser error: Can't compare string parameter with {OPERATION_LESS} (numerical) operation. Statement: {command}",
                             10);
+
                         return false;
                     }
 
@@ -248,6 +245,7 @@ namespace Stashie
                         DebugWindow.LogMsg(
                             $"Filter parser error: Can't compare string parameter with {OPERATION_LESSEQUAL} (numerical) operation. Statement: {command}",
                             10);
+
                         return false;
                     }
 
@@ -260,6 +258,7 @@ namespace Stashie
                         DebugWindow.LogMsg(
                             $"Filter parser error: Can't compare string parameter with {OPERATION_BIGGERQUAL} (numerical) operation. Statement: {command}",
                             10);
+
                         return false;
                     }
 
@@ -275,13 +274,14 @@ namespace Stashie
             return true;
         }
 
-
-        private static bool ParseCommand(string command, out string parameter, out string operation, out string value) {
+        private static bool ParseCommand(string command, out string parameter, out string operation, out string value)
+        {
             parameter = "";
             operation = "";
             value = "";
 
             var operationIndex = -1;
+
             foreach (var t in Operations)
             {
                 operationIndex = command.IndexOf(t, StringComparison.Ordinal);

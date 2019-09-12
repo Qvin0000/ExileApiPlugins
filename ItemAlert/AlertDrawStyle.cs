@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Exile.PoEMemory.MemoryObjects;
-using Shared.Enums;
-using Shared.Static;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Static;
 using SharpDX;
 
 namespace ItemAlert
@@ -24,7 +19,8 @@ namespace ItemAlert
             {ItemRarity.Unique, HudSkin.UniqueColor}
         };
 
-        public AlertDrawStyle(object colorRef, int borderWidth, string text, int iconIndex) {
+        public AlertDrawStyle(object colorRef, int borderWidth, string text, int iconIndex)
+        {
             BorderWidth = borderWidth;
             Text = text;
             IconIndex = iconIndex;
@@ -33,16 +29,13 @@ namespace ItemAlert
                 TextColor = (Color) colorRef;
             else
                 TextColor = GetTextColorByRarity((ItemRarity) colorRef);
+
             BorderColor = TextColor;
             BackgroundColor = DefaultBackgroundColor;
         }
 
-        public static Color GetTextColorByRarity(ItemRarity itemRarity) {
-            Color tempColor;
-            return colors.TryGetValue(itemRarity, out tempColor) ? tempColor : Color.White;
-        }
-
-        public AlertDrawStyle(string text, Color textColor, int borderWidth, Color borderColor, Color backgroundColor, int iconIndex) {
+        public AlertDrawStyle(string text, Color textColor, int borderWidth, Color borderColor, Color backgroundColor, int iconIndex)
+        {
             TextColor = textColor;
             BorderWidth = borderWidth;
             BorderColor = borderColor;
@@ -52,10 +45,16 @@ namespace ItemAlert
         }
 
         public Color TextColor { get; }
-        public int BorderWidth { get; private set; }
-        public Color BorderColor { get; private set; }
-        public Color BackgroundColor { get; private set; }
-        public string Text { get; private set; }
-        public int IconIndex { get; private set; }
+        public int BorderWidth { get; }
+        public Color BorderColor { get; }
+        public Color BackgroundColor { get; }
+        public string Text { get; }
+        public int IconIndex { get; }
+
+        public static Color GetTextColorByRarity(ItemRarity itemRarity)
+        {
+            Color tempColor;
+            return colors.TryGetValue(itemRarity, out tempColor) ? tempColor : Color.White;
+        }
     }
 }

@@ -1,13 +1,13 @@
-using Shared.Interfaces;
-using Shared.Nodes;
-using Shared.Nodes;
+using ExileCore.Shared.Interfaces;
+using ExileCore.Shared.Nodes;
 using SharpDX;
 
 namespace PreloadAlert
 {
     public class PreloadAlertSettings : ISettings
     {
-        public PreloadAlertSettings() {
+        public PreloadAlertSettings()
+        {
             Enable = new ToggleNode(true);
             Masters = new ToggleNode(true);
             Exiles = new ToggleNode(true);
@@ -127,9 +127,7 @@ namespace PreloadAlert
         public ToggleNode Enable { get; set; }
         public ToggleNode ParallelParsing { get; set; } = new ToggleNode(true);
         public ToggleNode LoadOnlyMetadata { get; set; } = new ToggleNode(true);
-
         public ColorNode CadiroTrader { get; set; }
-
         public ToggleNode Essence { get; set; }
         public ColorNode RemnantOfCorruption { get; set; }
         public ColorNode EssenceOfAnger { get; set; }
@@ -156,7 +154,6 @@ namespace PreloadAlert
         public ColorNode EssenceOfHorror { get; set; }
         public ColorNode EssenceOfDelirium { get; set; }
         public ColorNode EssenceOfAnguish { get; set; }
-
         public ColorNode PerandusChestStandard { get; set; }
         public ColorNode PerandusChestRarity { get; set; }
         public ColorNode PerandusChestQuantity { get; set; }

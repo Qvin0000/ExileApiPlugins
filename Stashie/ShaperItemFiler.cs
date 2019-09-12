@@ -4,6 +4,9 @@
     {
         public bool isShaper;
 
-        public bool CompareItem(ItemData itemData) => itemData.isShaper == isShaper;
+        public bool CompareItem(ItemData itemData)
+        {
+            return itemData.isShaper == isShaper;
+        }
     }
 }

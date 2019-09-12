@@ -1,30 +1,28 @@
 using System;
 using System.Linq;
-using System.Net;
-using Basic;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
-using Shared.Abstract;
-using Shared;
-using Shared.Helpers;
-using Shared.Interfaces;
-using Shared.Static;
-using PoEMemory.Components;
-using Shared;
-using Shared.Enums;
+using ExileCore;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
+using ExileCore.Shared.Abstract;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
+using ExileCore.Shared.Static;
 using SharpDX;
 
 namespace IconsBuilder
 {
     public class ChestIcon : BaseIcon
     {
+        public ChestIcon(Entity entity, GameController gameController, IconsBuilderSettings settings) : base(entity, settings)
+        {
+            Update(entity, settings);
+        }
+
         public ChestType CType { get; private set; }
 
-        public ChestIcon(Entity entity, GameController gameController, IconsBuilderSettings settings) : base(entity, settings) =>
-            Update(entity, settings);
-
-
-        public void Update(Entity entity, IconsBuilderSettings settings) {
+        public void Update(Entity entity, IconsBuilderSettings settings)
+        {
             if (Entity.Path.Contains("BreachChest"))
                 CType = ChestType.Breach;
             else if (Entity.Path.Contains("Metadata/Chests/AbyssChest") ||
@@ -34,13 +32,9 @@ namespace IconsBuilder
             else if (Entity.Path.Contains("Metadata/Chests/Incursion"))
                 CType = ChestType.Incursion;
             else if (Entity.Path.Contains("Fossil"))
-            {
                 CType = ChestType.Fossil;
-            }
             else if (Entity.Path.Contains("Metadata/Chests/Delve"))
-            {
                 CType = ChestType.Delve;
-            }
             else if (Entity.Path.Contains("Perandus"))
                 CType = ChestType.Perandus;
             else if (Entity.Path.Contains("Metadata/Chests/StrongBoxes"))
@@ -49,11 +43,10 @@ namespace IconsBuilder
                 CType = ChestType.Labyrinth;
             else if (Entity.Path.Contains("Metadata/Chests/SynthesisChests/Synthesis"))
                 CType = ChestType.Synthesis;
-            else if (Entity.League==LeagueType.Legion)
+            else if (Entity.League == LeagueType.Legion)
                 CType = ChestType.Legion;
             else
                 CType = ChestType.SmallChest;
-
 
             Show = () => !Entity.IsOpened;
 
@@ -92,10 +85,12 @@ namespace IconsBuilder
             {
                 case ChestType.Breach:
                     MainTexture.Size = settings.SizeBreachChestIcon;
+
                     if (Entity.Path.Contains("Large"))
                     {
                         MainTexture.UV = SpriteHelper.GetUV(strongboxesUV["Metadata/Chests/StrongBoxes/StrongboxDivination"],
-                                                            new Size2F(7, 8));
+                            new Size2F(7, 8));
+
                         MainTexture.Color = new ColorBGRA(240, 100, 255, 255);
                         Text = "Big Breach";
                     }
@@ -109,6 +104,7 @@ namespace IconsBuilder
                     break;
                 case ChestType.Abyss:
                     MainTexture.Size = settings.SizeChestIcon;
+
                     if (Entity.Path.Contains("AbyssFinalChest"))
                     {
                         MainTexture.UV = SpriteHelper.GetUV(strongboxesUV["Metadata/Chests/AbyssChest"], new Size2F(7, 8));
@@ -118,7 +114,8 @@ namespace IconsBuilder
                     else if (Entity.Path.Contains("AbyssChest"))
                     {
                         MainTexture.UV = SpriteHelper.GetUV(strongboxesUV["Metadata/Chests/StrongBoxes/StrongboxDivination"],
-                                                            new Size2F(7, 8));
+                            new Size2F(7, 8));
+
                         MainTexture.Color = Color.GreenYellow;
                     }
 
@@ -134,6 +131,7 @@ namespace IconsBuilder
                     MainTexture.Size = settings.SizeChestIcon;
                     MainTexture.Color = Color.GreenYellow;
                     Text = Entity.Path.Replace("Metadata/Chests/DelveChests/", "");
+
                     //Text = Text.Replace("ChestCurrency", "Cur");
                     //  Text = Text.Replace("Delve", "");
                     if (Text.EndsWith("NoDrops")) Text = "";
@@ -154,22 +152,28 @@ namespace IconsBuilder
                     else if (PathCheck(entity, "Metadata/Chests/DelveChests/OffPathArmour", "Metadata/Chests/DelveChests/PathArmour"))
                     {
                         MainTexture.UV = SpriteHelper.GetUV(MyMapIconsIndex.Armoury);
+
                         Text =
                             $"{Entity.Path.Substring(Entity.Path.IndexOf("PathArmour", StringComparison.Ordinal) + "PathArmour".Length)}";
+
                         Text = Text.Trim();
                     }
                     else if (PathCheck(entity, "Metadata/Chests/DelveChests/OffPathWeapon", "Metadata/Chests/DelveChests/PathWeapon"))
                     {
                         MainTexture.UV = SpriteHelper.GetUV(MyMapIconsIndex.Artisan);
+
                         Text =
                             $"{Entity.Path.Substring(Entity.Path.IndexOf("PathWeapon", StringComparison.Ordinal) + "PathWeapon".Length)}";
+
                         Text = Text.Trim();
                     }
                     else if (PathCheck(entity, "Metadata/Chests/DelveChests/PathGeneric", "Metadata/Chests/DelveChests/OffPathGeneric"))
                     {
                         MainTexture.UV = SpriteHelper.GetUV(MyMapIconsIndex.Strongbox);
+
                         Text =
                             $"{Entity.Path.Substring(Entity.Path.IndexOf("PathGeneric", StringComparison.Ordinal) + "PathGeneric".Length)}";
+
                         Text = Text.Trim();
                     }
                     else if (Entity.Path.Contains("Metadata/Chests/DelveChests/DelveAzuriteVein"))
@@ -289,6 +293,7 @@ namespace IconsBuilder
                     break;
                 case ChestType.Strongbox:
                     MainTexture.Size = settings.SizeChestIcon;
+
                     if (strongboxesUV.TryGetValue(Entity.Path, out var result))
                     {
                         MainTexture.UV = SpriteHelper.GetUV(result, new Size2F(7, 8));
@@ -304,6 +309,7 @@ namespace IconsBuilder
                 case ChestType.SmallChest:
 
                     MainTexture.Size = settings.SizeSmallChestIcon;
+
                     if (Entity.Path.Contains("VaultTreasurePile"))
                     {
                         MainTexture.UV = SpriteHelper.GetUV(strongboxesUV["Metadata/Chests/StrongBoxes/Arcanist"], new Size2F(7, 8));
@@ -356,6 +362,7 @@ namespace IconsBuilder
                     MainTexture.FileName = "Icons.png";
                     Priority = IconPriority.Critical;
                     MainTexture.Size = settings.SizeChestIcon;
+
                     if (Entity.GetComponent<Stats>().StatDictionary.TryGetValue(GameStat.MonsterMinimapIcon, out var minimapIconIndex))
                         MainTexture.UV = SpriteHelper.GetUV((MapIconsIndex) minimapIconIndex);
                     else
@@ -373,13 +380,22 @@ namespace IconsBuilder
             {
                 Logger.Log.Information(
                     $"Chest debug -> CType:{CType} Path: {Entity.Path} #\t\tText: {Text} #\t\tRender Name: {Entity.GetComponent<Render>().Name}");
+
                 if (Entity.GetComponent<Stats>()?.StatDictionary != null)
+                {
                     foreach (var i in Entity.GetComponent<Stats>().StatDictionary)
+                    {
                         Logger.Log.Information($"Stat: {i.Key} = {i.Value}");
+                    }
+                }
 
                 if (Entity.GetComponent<ObjectMagicProperties>() != null)
+                {
                     foreach (var mod in Entity.GetComponent<ObjectMagicProperties>().Mods)
+                    {
                         Logger.Log.Information($"Mods: {mod}");
+                    }
+                }
             }
         }
     }

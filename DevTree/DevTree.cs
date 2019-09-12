@@ -3,20 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
-using GameOffsets;
+using System.Windows.Forms;
+using ExileCore;
+using ExileCore.PoEMemory;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.Elements;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
+using ExileCore.Shared.Cache;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using ImGuiNET;
-using PoEMemory;
-using PoEMemory.Components;
-using PoEMemory.Elements;
-using ProcessMemoryUtilities.Memory;
-using Shared.Abstract;
-using Shared.Enums;
-using Shared.Helpers;
-using Shared.Interfaces;
-using Shared.Static;
 using SharpDX;
 using ImGuiVector2 = System.Numerics.Vector2;
 using ImGuiVector4 = System.Numerics.Vector4;
@@ -25,28 +22,38 @@ namespace DevTree
 {
     public partial class DevPlugin : BaseSettingsPlugin<DevSetting>
     {
-        private Dictionary<string, object> objects = new Dictionary<string, object>();
-        private HashSet<string> IgnoredPropertioes = new HashSet<string>() {"M", "TheGame", "Address"};
-        private Dictionary<string, MethodInfo> genericMethodCache = new Dictionary<string, MethodInfo>();
-        private Dictionary<string, int> Skips = new Dictionary<string, int>();
+        private const BindingFlags Flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static |
+                                           BindingFlags.FlattenHierarchy;
+
+        private readonly Random _rnd = new Random(123);
         private int _version;
-        private MethodInfo GetComponentMethod;
-
-        private Random _rnd = new Random(123);
         private TimeCache<Color> ColorSwaper;
+        private List<Entity> DebugEntities = new List<Entity>(128);
+        private double Error = 0;
+        private readonly Dictionary<string, MethodInfo> genericMethodCache = new Dictionary<string, MethodInfo>();
+        private MethodInfo GetComponentMethod;
+        private readonly HashSet<string> IgnoredPropertioes = new HashSet<string> {"M", "TheGame", "Address"};
+        private string inputFilter = "";
+        private readonly Dictionary<string, object> objects = new Dictionary<string, object>();
+        private readonly Dictionary<string, long> OffsetFinder = new Dictionary<string, long>(24);
+        private List<string> Rarities;
+        private MonsterRarity selectedRarity;
+        private string selectedRarityString = "All";
+        private readonly Dictionary<string, int> Skips = new Dictionary<string, int>();
+        private bool windowState;
 
-
-        private Dictionary<string, long> OffsetFinder = new Dictionary<string, long>(24);
-
-        public override void OnLoad() {
+        public override void OnLoad()
+        {
             var values = Enum.GetNames(typeof(MonsterRarity));
             Rarities = new List<string>(values);
             Rarities.Add("All");
         }
 
-        public override bool Initialise() {
+        public override bool Initialise()
+        {
             Force = true;
             GetComponentMethod = typeof(Entity).GetMethod("GetComponent");
+
             try
             {
                 InitObjects();
@@ -62,19 +69,21 @@ namespace DevTree
                 return new Color(_rnd.Next(255), _rnd.Next(255), _rnd.Next(255), 255);
                 ;
             }, 25);
+
+            Input.RegisterKey(Settings.ToggleWindowKey);
             Name = "Dev Tree";
             return true;
         }
 
-        public override void AreaChange(AreaInstance area) {
+        public override void AreaChange(AreaInstance area)
+        {
             InitObjects();
             Skips.Clear();
             OffsetFinder.Clear();
         }
 
-        private List<string> Rarities;
-
-        public void InitObjects() {
+        public void InitObjects()
+        {
             /*objects[nameof(GameController)] = GameController;
             objects[nameof(GameController.Game)] = GameController.Game;
             objects[nameof(GameController.Game.IngameState)] = GameController.Game.IngameState;
@@ -97,7 +106,8 @@ namespace DevTree
             _version++;
         }
 
-        public void AddObjects(object o, string name = null) {
+        public void AddObjects(object o, string name = null)
+        {
             if (o == null)
             {
                 DebugWindow.LogError($"{Name} cant add object to debug.");
@@ -116,17 +126,8 @@ namespace DevTree
             objects[name] = o;
         }
 
-        private double Error = 0;
-        private bool windowState;
-
-        private List<Entity> DebugEntities = new List<Entity>(128);
-
-
-        private string selectedRarityString = "All";
-        private MonsterRarity selectedRarity;
-        private string inputFilter = "";
-
-        public override void Render() {
+        public override void Render()
+        {
             /*if (RenderDebugInformation.Tick >= 500)
             {
                 Error += RenderDebugInformation.Tick;
@@ -138,14 +139,33 @@ namespace DevTree
                 }
             }*/
 
+            if (Settings.ToggleWindow)
+            {
+                if (Settings.ToggleWindowKey.PressedOnce())
+                {
+                    Settings.ToggleWindowState = !Settings.ToggleWindowState;
+                }
+
+                if (!Settings.ToggleWindowState)
+                    return;
+            }
+
             windowState = Settings.Enable;
             ImGui.Begin($"{Name}", ref windowState);
-            if (Settings.Enable != windowState) Settings.Enable.Value = windowState;
+
+            if (Settings.Enable != windowState)
+            {
+                if (!Settings.ToggleWindow)
+                    Settings.Enable.Value = windowState;
+                else
+                    Settings.ToggleWindowState = windowState;
+            }
 
             if (ImGui.Button("Reload")) InitObjects();
 
             ImGui.SameLine();
             ImGui.PushItemWidth(200);
+
             if (ImGui.InputText("Filter", ref inputFilter, 128))
             {
             }
@@ -153,12 +173,14 @@ namespace DevTree
             ImGui.PopItemWidth();
             ImGui.SameLine();
             ImGui.PushItemWidth(128);
+
             if (ImGui.BeginCombo("Rarity", selectedRarityString))
             {
                 for (var index = 0; index < Rarities.Count; index++)
                 {
                     var rarity = Rarities[index];
                     var isSelected = selectedRarityString == rarity;
+
                     if (ImGui.Selectable(rarity, isSelected))
                     {
                         selectedRarityString = rarity;
@@ -173,6 +195,7 @@ namespace DevTree
 
             ImGui.PopItemWidth();
             ImGui.SameLine();
+
             if (ImGui.Button("Debug around entities"))
             {
                 var entites = GameController.Entities;
@@ -185,15 +208,15 @@ namespace DevTree
                     {
                         DebugEntities = entites.Where(x => x.Rarity == selectedRarity &&
                                                            x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
-                                               .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
+                            .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
                     }
                     else
                     {
                         DebugEntities = entites
-                                        .Where(x => x.Path.Contains(inputFilter) &&
-                                                    x.GetComponent<ObjectMagicProperties>()?.Rarity == selectedRarity &&
-                                                    x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
-                                        .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
+                            .Where(x => x.Path.Contains(inputFilter) &&
+                                        x.GetComponent<ObjectMagicProperties>()?.Rarity == selectedRarity &&
+                                        x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
+                            .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
                     }
                 }
                 else
@@ -201,21 +224,24 @@ namespace DevTree
                     if (inputFilter.Length == 0)
                     {
                         DebugEntities = entites.Where(x => x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
-                                               .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
+                            .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
                     }
                     else
                     {
                         DebugEntities = entites
-                                        .Where(x => x.Path.Contains(inputFilter) &&
-                                                    x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
-                                        .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
+                            .Where(x => x.Path.Contains(inputFilter) &&
+                                        x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
+                            .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
                     }
                 }
             }
+
             foreach (var o in objects)
+            {
                 if (ImGui.TreeNode($"{o.Key}##{_version}"))
                 {
                     ImGui.Indent();
+
                     try
                     {
                         Debug(o.Value);
@@ -228,10 +254,12 @@ namespace DevTree
                     ImGui.Unindent();
                     ImGui.TreePop();
                 }
+            }
 
             if (ImGui.TreeNode("UIHover"))
             {
                 ImGui.Indent();
+
                 try
                 {
                     Debug(GameController.IngameState.UIHover);
@@ -248,6 +276,7 @@ namespace DevTree
             if (ImGui.TreeNode("UIHover as Item"))
             {
                 ImGui.Indent();
+
                 try
                 {
                     Debug(GameController.IngameState.UIHover.AsObject<HoverItemIcon>());
@@ -261,31 +290,33 @@ namespace DevTree
                 ImGui.TreePop();
             }
 
-
             if (ImGui.TreeNode("Only visible InGameUi"))
             {
                 ImGui.Indent();
                 var os = GameController.IngameState.IngameUi.Children.Where(x => x.IsVisibleLocal);
                 var index = 0;
+
                 foreach (var el in os)
+                {
                     try
                     {
                         if (ImGui.TreeNode($"{el.Address:X} - {el.X}:{el.Y},{el.Width}:{el.Height}##{el.GetHashCode()}"))
                         {
                             var keyForOffset = $"{el.Address}{el.GetHashCode()}";
+
                             if (OffsetFinder.TryGetValue(keyForOffset, out var offset))
                                 ImGui.Text($"Offset: {offset:X}");
                             else
                             {
                                 var IngameUi = GameController.IngameState.IngameUi;
                                 var pointers = IngameUi.M.ReadPointersArray(IngameUi.Address, IngameUi.Address + 10000);
+
                                 for (var i = 0; i < pointers.Count; i++)
                                 {
                                     var p = pointers[i];
                                     if (p == el.Address) OffsetFinder[keyForOffset] = i * 0x8;
                                 }
                             }
-
 
                             Debug(el);
                             ImGui.TreePop();
@@ -295,6 +326,7 @@ namespace DevTree
                         {
                             var clientRectCache = el.GetClientRectCache;
                             Graphics.DrawFrame(clientRectCache, ColorSwaper.Value, 1);
+
                             foreach (var element in el.Children)
                             {
                                 clientRectCache = element.GetClientRectCache;
@@ -308,39 +340,41 @@ namespace DevTree
                     {
                         DebugWindow.LogError($"UIHover -> {e}");
                     }
+                }
 
                 ImGui.Unindent();
                 ImGui.TreePop();
             }
 
-
             if (DebugEntities.Count > 0 && ImGui.TreeNode($"Entities {DebugEntities.Count}"))
             {
                 var camera = GameController.IngameState.Camera;
+
                 for (var index = 0; index < DebugEntities.Count; index++)
                 {
                     var debugEntity = DebugEntities[index];
                     var worldtoscreen = camera.WorldToScreen(debugEntity.Pos);
                     Graphics.DrawBox(worldtoscreen.TranslateToNum(-9, -9), worldtoscreen.TranslateToNum(18, 18), Color.Black);
                     Graphics.DrawText($"{index}", worldtoscreen);
-                    if (ImGui.TreeNode($"[{index}] {debugEntity.ToString()}"))
+
+                    if (ImGui.TreeNode($"[{index}] {debugEntity}"))
                     {
                         Debug(debugEntity);
                         ImGui.TreePop();
                     }
                 }
             }
+
             ImGui.End();
         }
 
-        private const BindingFlags Flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
-
-        public void Debug(object obj, Type type = null) {
+        public void Debug(object obj, Type type = null)
+        {
             try
             {
                 if (obj == null)
                 {
-                    ImGui.TextColored(Color.Red.ToImguiVec4(), $"Null");
+                    ImGui.TextColored(Color.Red.ToImguiVec4(), "Null");
                     return;
                 }
 
@@ -349,6 +383,7 @@ namespace DevTree
                 if (Convert.GetTypeCode(obj) == TypeCode.Object)
                 {
                     var methodInfo = type.GetMethod("ToString", Type.EmptyTypes);
+
                     if (methodInfo != null && (methodInfo.Attributes & MethodAttributes.VtableLayoutMask) == 0)
                     {
                         var toString = methodInfo?.Invoke(obj, null);
@@ -363,20 +398,22 @@ namespace DevTree
                     return;
                 }
 
-
                 //IEnumerable from start
                 var isEnumerable = IsEnumerable(type);
 
                 if (isEnumerable)
                 {
                     var collection = obj as ICollection;
+
                     if (collection != null)
                     {
                         var index = 0;
+
                         foreach (var col in collection)
                         {
                             var colType = col.GetType();
                             string colName;
+
                             switch (col)
                             {
                                 case Entity e:
@@ -389,6 +426,7 @@ namespace DevTree
                             }
 
                             var methodInfo = colType.GetMethod("ToString", Type.EmptyTypes);
+
                             if (methodInfo != null && (methodInfo.Attributes & MethodAttributes.VtableLayoutMask) == 0)
                             {
                                 var toString = methodInfo?.Invoke(col, null);
@@ -401,7 +439,6 @@ namespace DevTree
 
                                 ImGui.TreePop();
                             }
-
 
                             index++;
                         }
@@ -412,13 +449,16 @@ namespace DevTree
                     }
 
                     var enumerable = obj as IEnumerable;
+
                     if (enumerable != null)
                     {
                         var index = 0;
+
                         foreach (var col in enumerable)
                         {
                             var colType = col.GetType();
                             string colName;
+
                             switch (col)
                             {
                                 case Entity e:
@@ -431,6 +471,7 @@ namespace DevTree
                             }
 
                             var methodInfo = colType.GetMethod("ToString", Type.EmptyTypes);
+
                             if (methodInfo != null && (methodInfo.Attributes & MethodAttributes.VtableLayoutMask) == 0)
                             {
                                 var toString = methodInfo?.Invoke(col, null);
@@ -443,7 +484,6 @@ namespace DevTree
 
                                 ImGui.TreePop();
                             }
-
 
                             index++;
                         }
@@ -458,9 +498,11 @@ namespace DevTree
                     var key = type.GetProperty("Key").GetValue(obj, null);
                     var value = type.GetProperty("Value").GetValue(obj, null);
                     var valueType = value.GetType();
+
                     if (IsEnumerable(valueType))
                     {
                         var count = valueType.GetProperty("Count").GetValue(value, null);
+
                         if (ImGui.TreeNode($"{key} {count}"))
                         {
                             Debug(value);
@@ -469,16 +511,17 @@ namespace DevTree
                     }
                 }
 
-
                 var isMemoryObject = obj as RemoteMemoryObject;
+
                 if (isMemoryObject != null && isMemoryObject.Address == 0)
                 {
-                    ImGui.TextColored(Color.Red.ToImguiVec4(), $"Address 0. Cant read this object.");
+                    ImGui.TextColored(Color.Red.ToImguiVec4(), "Address 0. Cant read this object.");
                     return;
                 }
 
                 ImGui.Indent();
                 ImGui.BeginTabBar($"Tabs##{obj.GetHashCode()}");
+
                 if (ImGui.BeginTabItem("Properties"))
                 {
                     if (isMemoryObject != null)
@@ -495,8 +538,8 @@ namespace DevTree
 
                         ImGui.PopStyleColor(4);
 
-
                         var asComponent = isMemoryObject as Component;
+
                         if (asComponent != null)
                         {
                             ImGui.Text("OwnerAddress: ");
@@ -518,8 +561,9 @@ namespace DevTree
                                 {
                                     foreach (var component in e.CacheComp)
                                     {
-                                        var componentType = Type.GetType("PoEMemory.Components." + component.Key +
-                                                                         ",Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null");
+                                        var compFullName = typeof(Positioned).AssemblyQualifiedName.Replace(nameof(Positioned), component.Key);
+                                        var componentType = Type.GetType(compFullName);
+
                                         if (componentType == null)
                                         {
                                             ImGui.Text($"{component.Key}: Not implemented.");
@@ -543,13 +587,13 @@ namespace DevTree
                                         }
 
                                         var g = generic.Invoke(e, null);
+
                                         if (ImGui.TreeNode($"{component.Key} ##{e.Address}"))
                                         {
                                             Debug(g);
                                             ImGui.TreePop();
                                         }
                                     }
-
 
                                     ImGui.TreePop();
                                 }
@@ -569,7 +613,8 @@ namespace DevTree
                     }
 
                     var properties = type.GetProperties(Flags).Where(x => x.GetIndexParameters().Length == 0)
-                                         .OrderBy(x => x.PropertyType.GetInterface("IEnumerable") != null).ThenBy(x => x.Name);
+                        .OrderBy(x => x.PropertyType.GetInterface("IEnumerable") != null).ThenBy(x => x.Name);
+
                     foreach (var property in properties)
                     {
                         if (isMemoryObject != null && IgnoredPropertioes.Contains(property.Name)) continue;
@@ -599,25 +644,33 @@ namespace DevTree
                             ImGui.PopStyleColor(4);
                         }
                         else
-                        { //Draw enumrable 
+                        {
+                            //Draw enumrable 
                             isEnumerable = IsEnumerable(property.PropertyType);
+
                             if (isEnumerable)
                             {
                                 var collection = propertyValue as ICollection;
+
                                 if (collection == null)
                                     continue;
+
                                 if (collection.Count > 0)
                                 {
                                     ImGui.TextColored(Color.OrangeRed.ToImguiVec4(), $"[{collection.Count}]");
+
                                     var isElementEnumerable = property.PropertyType.GenericTypeArguments.Length == 1 &&
                                                               (property.PropertyType.GenericTypeArguments[0] == typeof(Element) ||
                                                                property.PropertyType.GenericTypeArguments[0].IsSubclassOf(typeof(Element)));
+
                                     if (isElementEnumerable)
                                     {
                                         if (ImGui.IsItemHovered())
                                         {
                                             var index = 0;
+
                                             foreach (var el in collection)
+                                            {
                                                 if (el is Element e)
                                                 {
                                                     var clientRectCache = e.GetClientRectCache;
@@ -625,6 +678,7 @@ namespace DevTree
                                                     Graphics.DrawText(index.ToString(), clientRectCache.Center);
                                                     index++;
                                                 }
+                                            }
                                         }
                                     }
 
@@ -634,6 +688,7 @@ namespace DevTree
                                     if (ImGui.TreeNode(strId))
                                     {
                                         var skipId = $"{strId} {obj.GetHashCode()}";
+
                                         if (Skips.TryGetValue(skipId, out var skip))
                                         {
                                             ImGui.InputInt("Skip", ref skip, 1, 100);
@@ -643,11 +698,14 @@ namespace DevTree
                                             Skips[skipId] = 0;
 
                                         var index = -1;
+
                                         foreach (var col in collection)
                                         {
                                             index++;
+
                                             if (index < skip)
                                                 continue;
+
                                             if (col == null)
                                             {
                                                 ImGui.TextColored(Color.Red.ToImguiVec4(), "Null");
@@ -656,6 +714,7 @@ namespace DevTree
 
                                             var colType = col.GetType();
                                             string colName;
+
                                             switch (col)
                                             {
                                                 case Entity e:
@@ -675,15 +734,16 @@ namespace DevTree
                                                     break;
                                             }
 
-
                                             if (IsSimpleType(colType))
                                                 ImGui.TextUnformatted(col.ToString());
                                             else
                                             {
                                                 Element element = null;
+
                                                 if (isElementEnumerable)
                                                 {
                                                     element = col as Element;
+
                                                     //  colName += $" ({element.ChildCount})";
                                                     ImGui.Text($" ({element.ChildCount})");
                                                     ImGui.SameLine();
@@ -691,6 +751,7 @@ namespace DevTree
                                                 else
                                                 {
                                                     var methodInfo = colType.GetMethod("ToString", Type.EmptyTypes);
+
                                                     if (methodInfo != null &&
                                                         (methodInfo.Attributes & MethodAttributes.VtableLayoutMask) == 0)
                                                     {
@@ -702,8 +763,10 @@ namespace DevTree
                                                 if (ImGui.TreeNode($"[{index}] {colName} ##{col.GetHashCode()}"))
                                                 {
                                                     if (element != null && ImGui.IsItemHovered())
+                                                    {
                                                         if (element.Width > 0 && element.Height > 0)
                                                             Graphics.DrawFrame(element.GetClientRectCache, ColorSwaper.Value, 2);
+                                                    }
 
                                                     Debug(col, colType);
 
@@ -713,8 +776,10 @@ namespace DevTree
                                                 if (isElementEnumerable && element != null)
                                                 {
                                                     if (ImGui.IsItemHovered())
+                                                    {
                                                         if (element.Width > 0 && element.Height > 0)
                                                             Graphics.DrawFrame(element.GetClientRectCache, ColorSwaper.Value, 2);
+                                                    }
                                                 }
                                             }
 
@@ -735,6 +800,7 @@ namespace DevTree
                                     ImGui.Unindent();
                                 }
                             }
+
                             //Debug others objects
                             else
                             {
@@ -744,11 +810,11 @@ namespace DevTree
                                 {
                                     string name;
                                     var isMemoryObj = propertyValue is RemoteMemoryObject;
+
                                     if (isMemoryObj)
                                         name = $"{property.Name} [{((RemoteMemoryObject) propertyValue).Address:X}]##{type.FullName}";
                                     else
                                         name = $"{property.Name} ##{type.FullName}";
-
 
                                     if (ImGui.TreeNode(name))
                                     {
@@ -764,8 +830,10 @@ namespace DevTree
                                             case Element e:
 
                                                 if (ImGui.IsItemHovered())
+                                                {
                                                     if (e.Width > 0 && e.Height > 0)
                                                         Graphics.DrawFrame(e.GetClientRectCache, ColorSwaper.Value, 2);
+                                                }
 
                                                 break;
                                         }
@@ -784,11 +852,13 @@ namespace DevTree
                     if (ImGui.TreeNode(strId))
                     {*/
                     var fields = type.GetFields(Flags);
+
                     foreach (var field in fields)
                     {
                         var fieldValue = field.GetValue(obj);
 
                         if (IsSimpleType(field.FieldType))
+
                             //if(Convert.GetTypeCode(fieldValue) != TypeCode.Object)
                         {
                             ImGui.Text($"{field.Name}: ");
@@ -820,7 +890,7 @@ namespace DevTree
                 if (isMemoryObject != null && ImGui.BeginTabItem("Dynamic"))
                 {
                     var remoteMemoryObject = (RemoteMemoryObject) obj;
-                    ImGui.TextColored(Color.GreenYellow.ToImguiVec4(), $"Address: ");
+                    ImGui.TextColored(Color.GreenYellow.ToImguiVec4(), "Address: ");
                     if (ImGui.IsItemClicked()) ImGui.SetClipboardText(remoteMemoryObject.Address.ToString());
 
                     ImGui.SameLine();
@@ -839,6 +909,7 @@ namespace DevTree
                     {
                         case Entity e:
                             var key = $"{e.Address}{e.Id}{e.Path}";
+
                             if (e.GetComponent<Render>() != null)
                             {
                                 if (ImGui.TreeNode($"World position##{remoteMemoryObject.Address}"))
@@ -849,27 +920,32 @@ namespace DevTree
 
                                     ImGui.Text($"Position: {pos}");
                                     ImGui.Text($"To Screen: {toScreen}");
+
                                     Graphics.DrawFrame(toScreen.ToVector2Num(),
-                                                       toScreen.TranslateToNum(renderComponentBounds.X, -renderComponentBounds.Y),
-                                                       Color.Orange, 0, 1, 0);
+                                        toScreen.TranslateToNum(renderComponentBounds.X, -renderComponentBounds.Y),
+                                        Color.Orange, 0, 1, 0);
                                 }
                             }
 
                             break;
                         case Element e:
                             var keyForOffsetFinder = $"{e.Address}{e.GetHashCode()}";
+
                             if (OffsetFinder.TryGetValue(keyForOffsetFinder, out var offset))
                                 ImGui.TextColored(Color.Aqua.ToImguiVec4(), $"Offset: {offset:X}");
                             else
                             {
                                 var parent = e.Parent;
+
                                 if (parent != null)
                                 {
                                     var pointers = e.M.ReadPointersArray(parent.Address, parent.Address + 8000 * 0x8);
                                     var found = false;
+
                                     for (var index = 0; index < pointers.Count; index++)
                                     {
                                         var p = pointers[index];
+
                                         if (p == e.Address)
                                         {
                                             OffsetFinder[keyForOffsetFinder] = index * 0x8;
@@ -884,15 +960,16 @@ namespace DevTree
                                     OffsetFinder[keyForOffsetFinder] = -1;
                             }
 
-                            if (ImGui.Button($"Change Visible##{e.GetHashCode()}"))
-                            {
-                                var currentState = e.IsVisibleLocal;
-                                var offsetELementIsVivible = Extensions.GetOffset<ElementOffsets>(nameof(ElementOffsets.IsVisibleLocal));
-                                var b = (byte) (currentState ? 19 : 23);
-                                var writeProcessMemory = ProcessMemory.WriteProcessMemory(e.M.OpenProcessHandle,
-                                                                                          new IntPtr(e.Address + offsetELementIsVivible),
-                                                                                          b);
-                            }
+                            //if (ImGui.Button($"Change Visible##{e.GetHashCode()}"))
+                            //{
+                            //    var currentState = e.IsVisibleLocal;
+                            //    var offsetELementIsVivible = Extensions.GetOffset<ElementOffsets>(nameof(ElementOffsets.IsVisibleLocal));
+                            //    var b = (byte) (currentState ? 19 : 23);
+
+                            //    var writeProcessMemory = ProcessMemory.WriteProcessMemory(e.M.OpenProcessHandle,
+                            //        new IntPtr(e.Address + offsetELementIsVivible),
+                            //        b);
+                            //}
 
                             break;
                     }

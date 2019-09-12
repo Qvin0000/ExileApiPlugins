@@ -1,31 +1,36 @@
 using System;
 using System.Collections.Generic;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
-using IconsBuilder;
+using ExileCore;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
+using ExileCore.Shared.Abstract;
+using ExileCore.Shared.Cache;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 using JM.LinqFaster;
-using PoEMemory.Components;
-using Shared;
-using Shared.Abstract;
-using Shared.Enums;
-using Shared.Helpers;
-using Shared.Interfaces;
 using SharpDX;
 
 namespace IconsBuilder
 {
     public class LegionIcon : BaseIcon
-
     {
         public LegionIcon(Entity entity, GameController gameController, IconsBuilderSettings settings, Dictionary<string, Size2> modIcons) :
-            base(entity, settings) =>
+            base(entity, settings)
+        {
             Update(entity, settings, modIcons);
+        }
 
-        public override string ToString() => $"{Entity.Metadata} : {Entity.Type} ({Entity.Address}) T: {Text}";
+        public override string ToString()
+        {
+            return $"{Entity.Metadata} : {Entity.Type} ({Entity.Address}) T: {Text}";
+        }
 
-        public void Update(Entity entity, IconsBuilderSettings settings, Dictionary<string, Size2> modIcons) {
+        public void Update(Entity entity, IconsBuilderSettings settings, Dictionary<string, Size2> modIcons)
+        {
             MainTexture = new HudTexture("Icons.png");
             if (!_HasIngameIcon) MainTexture = new HudTexture("Icons.png");
+
             switch (Rarity)
             {
                 case MonsterRarity.White:
@@ -46,25 +51,25 @@ namespace IconsBuilder
                     break;
             }
 
-            if (entity.Path.StartsWith("Metadata/Monsters/LegionLeague/MonsterChest", StringComparison.Ordinal) || Rarity==MonsterRarity.Unique)
+            if (entity.Path.StartsWith("Metadata/Monsters/LegionLeague/MonsterChest", StringComparison.Ordinal) || Rarity == MonsterRarity.Unique)
             {
                 MainTexture.UV = SpriteHelper.GetUV(MapIconsIndex.LootFilterLargeGreenSquare);
                 MainTexture.Color = Color.LimeGreen;
                 Hidden = () => false;
                 Text = entity.RenderName;
+
                 Show = () =>
                 {
                     if (Entity.IsValid)
-                    {
                         return Entity.GetComponent<Life>().HPPercentage > 0.02;
 
-                    }
                     return Entity.IsAlive;
                 };
             }
             else
             {
                 string modName = null;
+
                 if (entity.HasComponent<ObjectMagicProperties>())
                 {
                     var objectMagicProperties = entity.GetComponent<ObjectMagicProperties>();
@@ -73,6 +78,7 @@ namespace IconsBuilder
                     if (mods.Contains("MonsterConvertsOnDeath_")) Show = () => entity.IsValid && entity.IsAlive && entity.IsHostile;
 
                     modName = mods.FirstOrDefaultF(modIcons.ContainsKey);
+
                     if (modName != null)
                     {
                         MainTexture = new HudTexture("sprites.png");
@@ -103,8 +109,8 @@ namespace IconsBuilder
                     }
                 }
 
-
                 var statDictionary = Entity.Stats;
+
                 if (statDictionary.Count == 0)
                 {
                     statDictionary = entity.GetComponentFromMemory<Stats>().ParseStats();
@@ -116,9 +122,9 @@ namespace IconsBuilder
                     var name = (MapIconsIndex) indexMinimapIcon;
                     Text = name.ToString().Replace("Legion", "");
                     Priority = IconPriority.Critical;
+
                     var frozenCheck = new TimeCache<bool>(() =>
                     {
-                        
                         var stats = Entity.Stats;
                         if (stats.Count == 0) return false;
                         stats.TryGetValue(GameStat.FrozenInTime, out var FrozenInTime);
@@ -126,10 +132,10 @@ namespace IconsBuilder
                         return FrozenInTime == 1 && MonsterHideMinimapIcon == 1 || FrozenInTime == 0 && MonsterHideMinimapIcon == 0;
                     }, 75);
 
-                    Show = () =>  Entity.IsAlive && frozenCheck.Value;
+                    Show = () => Entity.IsAlive && frozenCheck.Value;
                 }
                 else
-                    Show = () =>  !Hidden() && Entity.GetComponent<Life>().HPPercentage > 0.02;
+                    Show = () => !Hidden() && Entity.GetComponent<Life>().HPPercentage > 0.02;
             }
         }
     }

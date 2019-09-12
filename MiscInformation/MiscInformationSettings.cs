@@ -1,12 +1,13 @@
-﻿using Shared.Interfaces;
-using Shared.Nodes;
+﻿using ExileCore.Shared.Interfaces;
+using ExileCore.Shared.Nodes;
 using SharpDX;
 
 namespace MiscInformation
 {
     public class MiscInformationSettings : ISettings
     {
-        public MiscInformationSettings() {
+        public MiscInformationSettings()
+        {
             BackgroundColor = new ColorBGRA(0, 0, 0, 255);
             AreaTextColor = new ColorBGRA(140, 200, 255, 255);
             XphTextColor = new ColorBGRA(220, 190, 130, 255);

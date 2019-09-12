@@ -1,28 +1,28 @@
 using System;
-using System.Linq.Expressions;
-using Basic;
-using Exile;
-using Exile.PoEMemory.MemoryObjects;
-using Shared.Abstract;
-using Shared;
-using Shared.Helpers;
-using Shared.Interfaces;
-using PoEMemory.Components;
-using Shared;
-using Shared.Enums;
-using SharpDX;
+using ExileCore;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
+using ExileCore.Shared.Abstract;
+using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
 
 namespace IconsBuilder
 {
     public class MiscIcon : BaseIcon
     {
-        public override string ToString() => $"{Entity.Path} : ({Entity.Type}) :{Text}";
-
-        public MiscIcon(Entity entity, GameController gameController, IconsBuilderSettings settings) : base(entity, settings) =>
+        public MiscIcon(Entity entity, GameController gameController, IconsBuilderSettings settings) : base(entity, settings)
+        {
             Update(entity, settings);
+        }
 
+        public override string ToString()
+        {
+            return $"{Entity.Path} : ({Entity.Type}) :{Text}";
+        }
 
-        public void Update(Entity entity, IconsBuilderSettings settings) {
+        public void Update(Entity entity, IconsBuilderSettings settings)
+        {
             if (!_HasIngameIcon)
             {
                 MainTexture = new HudTexture();
@@ -48,6 +48,7 @@ namespace IconsBuilder
                     Show = () =>
                     {
                         var isVisible = false;
+
                         if (entity.HasComponent<MinimapIcon>())
                         {
                             var minimapIcon = entity.GetComponent<MinimapIcon>();
@@ -66,6 +67,7 @@ namespace IconsBuilder
                 if (entity.Path.Equals("Metadata/MiscellaneousObjects/Abyss/AbyssCrackSpawners/AbyssCrackSkeletonSpawner"))
                 {
                     MainTexture.UV = SpriteHelper.GetUV(MapIconsIndex.AbyssCrack);
+
                     Show = () => entity.IsValid && (entity.GetComponent<MinimapIcon>().IsHide == false ||
                                                     entity.GetComponent<Transitionable>().Flag1 == 1);
                 }
@@ -73,6 +75,7 @@ namespace IconsBuilder
                 else if (entity.Path.Equals("Metadata/MiscellaneousObjects/Abyss/AbyssStartNode"))
                 {
                     MainTexture.UV = SpriteHelper.GetUV(MapIconsIndex.Abyss);
+
                     Show = () => entity.IsValid && (entity.GetComponent<MinimapIcon>().IsHide == false ||
                                                     entity.GetComponent<Transitionable>().Flag1 == 1);
                 }

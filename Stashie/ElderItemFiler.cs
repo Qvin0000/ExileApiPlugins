@@ -3,6 +3,10 @@
     public class ElderItemFiler : IIFilter
     {
         public bool isElder;
-        public bool CompareItem(ItemData itemData) => itemData.isElder == isElder;
+
+        public bool CompareItem(ItemData itemData)
+        {
+            return itemData.isElder == isElder;
+        }
     }
 }
