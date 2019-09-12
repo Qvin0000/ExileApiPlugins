@@ -120,7 +120,7 @@ namespace XPBar
         private uint CurMax;
         private uint CurMin;
 
-        public override void OnLoad()
+        public override bool Initialise()
         {
             var pExp = GameController.Player.GetComponent<Player>().XP;
 
@@ -137,14 +137,12 @@ namespace XPBar
                     break;
                 }
             }
-
             CurDiff = CurMax - CurMin;
+            return true;
         }
 
         public override void Render()
         {
-            Initialise();
-
             //var expElement = GameController.Game.IngameState.UIRoot.GetChildFromIndices(1, 57, 12);
             var pExp = GameController.Player.GetComponent<Player>().XP;
 
