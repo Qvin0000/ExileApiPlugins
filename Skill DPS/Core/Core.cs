@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
-using Exile;
-using Shared.Enums;
+using ExileCore;
+using ExileCore.Shared.Enums;
 using SharpDX;
 using Skill_DPS.Skill_Data;
 using Vector2 = System.Numerics.Vector2;

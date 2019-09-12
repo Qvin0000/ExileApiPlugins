@@ -1,6 +1,6 @@
-﻿using Shared.Attributes;
-using Shared.Interfaces;
-using Shared.Nodes;
+﻿using ExileCore.Shared.Attributes;
+using ExileCore.Shared.Interfaces;
+using ExileCore.Shared.Nodes;
 using SharpDX;
 
 namespace Skill_DPS.Core

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
-using PoEMemory;
-using PoEMemory.Components;
+using ExileCore.PoEMemory;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.MemoryObjects;
 
 namespace Skill_DPS.Skill_Data
 {
