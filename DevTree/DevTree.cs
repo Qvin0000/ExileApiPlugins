@@ -3,15 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Windows.Forms;
 using ExileCore;
 using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.Elements;
 using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared;
 using ExileCore.Shared.Cache;
 using ExileCore.Shared.Enums;
 using ExileCore.Shared.Helpers;
-using GameOffsets;
 using ImGuiNET;
 using SharpDX;
 using ImGuiVector2 = System.Numerics.Vector2;
@@ -69,6 +70,7 @@ namespace DevTree
                 ;
             }, 25);
 
+            Input.RegisterKey(Settings.ToggleWindowKey);
             Name = "Dev Tree";
             return true;
         }
@@ -137,9 +139,27 @@ namespace DevTree
                 }
             }*/
 
+            if (Settings.ToggleWindow)
+            {
+                if (Settings.ToggleWindowKey.PressedOnce())
+                {
+                    Settings.ToggleWindowState = !Settings.ToggleWindowState;
+                }
+
+                if (!Settings.ToggleWindowState)
+                    return;
+            }
+
             windowState = Settings.Enable;
             ImGui.Begin($"{Name}", ref windowState);
-            if (Settings.Enable != windowState) Settings.Enable.Value = windowState;
+
+            if (Settings.Enable != windowState)
+            {
+                if (!Settings.ToggleWindow)
+                    Settings.Enable.Value = windowState;
+                else
+                    Settings.ToggleWindowState = windowState;
+            }
 
             if (ImGui.Button("Reload")) InitObjects();
 
@@ -541,8 +561,8 @@ namespace DevTree
                                 {
                                     foreach (var component in e.CacheComp)
                                     {
-                                        var componentType = Type.GetType("PoEMemory.Components." + component.Key +
-                                                                         ",Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null");
+                                        var compFullName = typeof(Positioned).AssemblyQualifiedName.Replace(nameof(Positioned), component.Key);
+                                        var componentType = Type.GetType(compFullName);
 
                                         if (componentType == null)
                                         {

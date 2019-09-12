@@ -192,15 +192,17 @@ namespace PassiveSkillTreePlanter
             var currentStringBytes = Encoding.Default.GetBytes(currentValue);
             var buffer = new byte[maxLength];
             Array.Copy(currentStringBytes, buffer, Math.Min(currentStringBytes.Length, maxLength));
-
+            int cursor_pos = -1;
             int Callback(ImGuiInputTextCallbackData* data)
             {
-                //var pCursorPos = (int*) data->UserData;
-                //if (!data->HasSelection()) *pCursorPos = data->CursorPos;//TODO: Find out what a hell to do with this
+                int* p_cursor_pos = (int*)data->UserData;
+
+                if (ImGuiNative.ImGuiInputTextCallbackData_HasSelection(data) == 0)
+                    *p_cursor_pos = data->CursorPos;
                 return 0;
             }
 
-            ImGui.InputText(label, buffer, maxLength, flags, Callback);
+            ImGui.InputText(label, buffer, maxLength, flags, Callback, (IntPtr)(&cursor_pos));
             return Encoding.Default.GetString(buffer).TrimEnd('\0');
         }
     }

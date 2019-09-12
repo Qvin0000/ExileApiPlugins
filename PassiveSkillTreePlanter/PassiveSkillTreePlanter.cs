@@ -245,6 +245,7 @@ namespace PassiveSkillTreePlanter
                             ImGuiComboFlags.HeightLarge);
 
                         if (tempBool) ReadUrlFromSelectedUrl(Settings.SelectedURLFile);
+
                         break;
                     case "Build Edit":
                         if (!string.IsNullOrEmpty(CurrentlySelectedBuildFile))
@@ -504,13 +505,12 @@ namespace PassiveSkillTreePlanter
             var scale = _uiSkillTreeBase.Scale;
 
             //Hand-picked values
-            var offsetX = 12465;
-            var offsetY = 11582;
+            var offsetX = 12450;
+            var offsetY = 11850;
             var passives = GameController.Game.IngameState.ServerData.PassiveSkillIds;
 
             var totalNodes = _drawNodes.Count;
             int pickedNodes = passives.Count;
-            var wrongPicked = 0;
 
             foreach (var node in _drawNodes)
             {
@@ -544,7 +544,7 @@ namespace PassiveSkillTreePlanter
                 }
             }
 
-            wrongPicked = passives.Count;
+            var wrongPicked = passives.Count;
 
             foreach (var passiveId in passives)
             {

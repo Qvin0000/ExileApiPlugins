@@ -16,7 +16,6 @@ namespace PassiveSkillTreePlanter
             LineWidth = new RangeNode<int>(3, 0, 5);
             LineColor = new ColorNode(new Color(0, 255, 0, 50));
             SelectedURLFile = string.Empty;
-            LastSettingSize = new ImGuiVector2(620, 376);
         }
 
         public RangeNode<int> PickedBorderWidth { get; set; } = new RangeNode<int>(1, 1, 5);
@@ -28,9 +27,6 @@ namespace PassiveSkillTreePlanter
         public RangeNode<int> LineWidth { get; set; }
         public ColorNode LineColor { get; set; }
         public string SelectedURLFile { get; set; }
-        [Menu("Show ImGui Settings")]
-        public ToggleNode ShowWindow { get; set; } = new ToggleNode(false);
-        public ImGuiVector2 LastSettingSize { get; set; }
         public ToggleNode Enable { get; set; } = new ToggleNode(true);
     }
 }
