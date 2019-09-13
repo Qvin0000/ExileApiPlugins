@@ -617,6 +617,10 @@ namespace DevTree
 
                     foreach (var property in properties)
                     {
+                        try
+                        {
+
+                       
                         if (isMemoryObject != null && IgnoredPropertioes.Contains(property.Name)) continue;
 
                         var propertyValue = property.GetValue(obj);
@@ -840,6 +844,11 @@ namespace DevTree
                                     }
                                 }
                             }
+                        }
+                        }
+                        catch (Exception e)
+                        {
+                            LogError($"{property.Name} -> {e}");
                         }
                     }
 
