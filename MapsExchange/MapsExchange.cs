@@ -472,7 +472,7 @@ namespace MapsExchange
                 {
                     var mapComponent = item.GetComponent<Map>();
 
-                    if (mapComponent.Address == 0)
+                    if (mapComponent == null)
                         continue;
 
                     var mapArea = mapComponent.Area;
