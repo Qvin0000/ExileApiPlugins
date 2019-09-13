@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Windows.Forms;
 using ExileCore;
 using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
@@ -13,6 +14,11 @@ namespace Skill_DPS.Core
 {
     public class SkillDpsCore : BaseSettingsPlugin<Settings>
     {
+        public override void OnLoad()
+        {
+            Input.RegisterKey(Keys.LControlKey);
+        }
+
         public override void Render()
         {
             base.Render();
@@ -34,7 +40,21 @@ namespace Skill_DPS.Core
                 return;
             }
 
-            var skills = CurrentSkills(ids, actorSkills);
+            var skillbarChildren = RemoteMemoryObject.pTheGame.IngameState.IngameUi.SkillBar.Children;
+
+            if (skillbarChildren == null || skillbarChildren.Count == 0)
+            {
+                LogError("SkillBar.Children is null or empty. Check offsets");
+                return;
+            }
+
+            if (skillbarChildren.Count < 8)
+            {
+                LogError("Expecting at least 8 childs in SkillBar.Children");
+                return;
+            }
+
+            var skills = CurrentSkills(ids, actorSkills, skillbarChildren);
 
             if (skills == null || skills.Count == 0)
             {
@@ -44,6 +64,11 @@ namespace Skill_DPS.Core
 
             foreach (var skill in skills)
             {
+                if (skill.Skill.SkillSlotIndex >= 8 && !Input.IsKeyDown(Keys.LControlKey))
+                {
+                    continue;
+                }
+
                 var box = skill.SkillElement.GetClientRect();
                 var newBox = new RectangleF(box.X, box.Y - 2, box.Width, -15);
 
@@ -80,7 +105,7 @@ namespace Skill_DPS.Core
             return num.ToString("0.#", CultureInfo.InvariantCulture);
         }
 
-        public static List<Data> CurrentSkills(IList<ushort> ids, List<ActorSkill> actorSkills)
+        public static List<Data> CurrentSkills(IList<ushort> ids, List<ActorSkill> actorSkills, IList<Element> skillbarChildren)
         {
             var returnSkills = new List<Data>();
 
@@ -91,14 +116,21 @@ namespace Skill_DPS.Core
                 if (skillId == 0)
                     continue;
 
-                foreach (var actorSkill in actorSkills)
+                for (var i = actorSkills.Count - 1; i >= 0; i--)
                 {
+                    var actorSkill = actorSkills[i];
+
                     if (actorSkill.Id == skillId)
                     {
+                        var realIndex = index;
+
+                        if (realIndex >= 8)
+                            realIndex -= 5;
+
                         returnSkills.Add(new Data
                         {
                             Skill = actorSkill,
-                            SkillElement = RemoteMemoryObject.pTheGame.IngameState.IngameUi.SkillBar.Children[index]
+                            SkillElement = skillbarChildren[realIndex]
                         });
 
                         break;

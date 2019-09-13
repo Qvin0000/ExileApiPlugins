@@ -95,6 +95,7 @@ namespace DevTree
             AddObjects(GameController.Cache);
             AddObjects(GameController);
             AddObjects(GameController.Game);
+            AddObjects(GameController.Player, "Player");
             AddObjects(GameController.Game.IngameState);
             AddObjects(GameController.Game.IngameState.IngameUi);
             AddObjects(GameController.Game.IngameState.Data);
