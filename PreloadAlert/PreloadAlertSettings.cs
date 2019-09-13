@@ -9,6 +9,7 @@ namespace PreloadAlert
         public PreloadAlertSettings()
         {
             Enable = new ToggleNode(true);
+            ShowInHideout = new ToggleNode(false);
             Masters = new ToggleNode(true);
             Exiles = new ToggleNode(true);
             Strongboxes = new ToggleNode(true);
@@ -125,6 +126,7 @@ namespace PreloadAlert
         }
 
         public ToggleNode Enable { get; set; }
+        public ToggleNode ShowInHideout { get; set; }
         public ToggleNode ParallelParsing { get; set; } = new ToggleNode(true);
         public ToggleNode LoadOnlyMetadata { get; set; } = new ToggleNode(true);
         public ColorNode CadiroTrader { get; set; }
