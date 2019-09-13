@@ -71,6 +71,9 @@ namespace DevTree
             }, 25);
 
             Input.RegisterKey(Settings.ToggleWindowKey);
+            Input.RegisterKey(Settings.DebugHoverItem);
+            Settings.DebugHoverItem.OnValueChanged += () => {   Input.RegisterKey(Settings.DebugHoverItem);};
+            Settings.ToggleWindowKey.OnValueChanged += () => {   Input.RegisterKey(Settings.ToggleWindowKey);};
             Name = "Dev Tree";
             return true;
         }
@@ -84,13 +87,6 @@ namespace DevTree
 
         public void InitObjects()
         {
-            /*objects[nameof(GameController)] = GameController;
-            objects[nameof(GameController.Game)] = GameController.Game;
-            objects[nameof(GameController.Game.IngameState)] = GameController.Game.IngameState;
-            objects[nameof(GameController.Cache)] = GameController.Cache;
-            objects[nameof(GameController.Game.IngameState.IngameUi)] = GameController.Game.IngameState.IngameUi;
-            objects[nameof(GameController.Game.IngameState.Data)] = GameController.Game.IngameState.Data;
-            objects[nameof(GameController.Game.IngameState.ServerData)] = GameController.Game.IngameState.ServerData;*/
             objects.Clear();
             AddObjects(GameController.Cache);
             AddObjects(GameController);
@@ -151,6 +147,15 @@ namespace DevTree
                     return;
             }
 
+            if (Settings.DebugHoverItem.PressedOnce())
+            {
+                var ingameStateUiHover = GameController.IngameState.UIHover;
+                var hoverItemIcon = GameController.IngameState.UIHover.AsObject<HoverItemIcon>();
+                if (ingameStateUiHover.Address != 0)
+                {
+                    AddObjects(new{Hover = ingameStateUiHover,HoverLikeItem = hoverItemIcon},"Stored UIHover");
+                }
+            }
             windowState = Settings.Enable;
             ImGui.Begin($"{Name}", ref windowState);
 
