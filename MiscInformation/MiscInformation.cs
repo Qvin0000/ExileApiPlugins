@@ -64,9 +64,14 @@ namespace MiscInformation
         private string xpRate = "";
         private string xpReceivingText = "";
 
-        public MiscInformation()
+       
+
+        public override void OnLoad()
         {
-            Order = 1;
+            Order = -50;
+            Graphics.InitImage("preload-start.png");
+            Graphics.InitImage("preload-end.png");
+            Graphics.InitImage("preload-new.png");
         }
 
         public override bool Initialise()
@@ -79,10 +84,6 @@ namespace MiscInformation
             };
 
             GameController.LeftPanel.WantUse(() => Settings.Enable);
-            Graphics.InitImage("preload-start.png");
-            Graphics.InitImage("preload-end.png");
-            Graphics.InitImage("preload-new.png");
-
             CalcXp = new TimeCache<bool>(() =>
             {
                 partytime += time;

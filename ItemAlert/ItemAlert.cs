@@ -35,12 +35,16 @@ namespace ItemAlert
 
         public ItemAlert()
         {
-            Order = 5;
+            CanUseMultiThreading = true;
+            Order = -30;
         }
 
         public override void OnLoad()
         {
             task = Task.Run(() => PoeFilterInit(Settings.FilePath));
+            Graphics.InitImage("currency.png");
+            Graphics.InitImage("item_icons.png");
+            Graphics.InitImage("directions.png");
         }
 
         public override bool Initialise()
@@ -53,10 +57,6 @@ namespace ItemAlert
                 var coroutine = new Coroutine(RestartParseItemsAfterFilterChange(), this, "Check items after filter change");
                 Core.MainRunner.Run(coroutine);
             };
-
-            Graphics.InitImage("currency.png");
-            Graphics.InitImage("item_icons.png");
-            Graphics.InitImage("directions.png");
             task.Wait();
             return true;
         }

@@ -41,12 +41,14 @@ namespace DevTree
         private string selectedRarityString = "All";
         private readonly Dictionary<string, int> Skips = new Dictionary<string, int>();
         private bool windowState;
-
+        public Func<List<PluginWrapper>> Plugins;
+        
         public override void OnLoad()
         {
             var values = Enum.GetNames(typeof(MonsterRarity));
             Rarities = new List<string>(values);
             Rarities.Add("All");
+            Plugins = () => new List<PluginWrapper>();
         }
 
         public override bool Initialise()
@@ -100,6 +102,7 @@ namespace DevTree
             AddObjects(GameController.Game.IngameState.ServerData.PlayerInventories[0].Inventory.Items, "Items");
             AddObjects(GameController.Game.IngameState.IngameUi.InventoryPanel[InventoryIndex.PlayerInventory], "Inventory panel");
             AddObjects(GameController.IngameState.IngameUi.ItemsOnGroundLabels, "Label on grounds");
+            AddObjects(Plugins(),"Plugins");
             _version++;
         }
 
@@ -257,8 +260,11 @@ namespace DevTree
                         DebugWindow.LogError($"{Name} -> {e}");
                     }
 
-                    ImGui.Unindent();
-                    ImGui.TreePop();
+                    finally
+                    {
+                        ImGui.Unindent();
+                        ImGui.TreePop();
+                    }
                 }
             }
 
@@ -274,9 +280,11 @@ namespace DevTree
                 {
                     DebugWindow.LogError($"UIHover -> {e}");
                 }
-
-                ImGui.Unindent();
-                ImGui.TreePop();
+                finally
+                {
+                    ImGui.Unindent();
+                    ImGui.TreePop();
+                }
             }
 
             if (ImGui.TreeNode("UIHover as Item"))
@@ -291,9 +299,11 @@ namespace DevTree
                 {
                     DebugWindow.LogError($"UIHover -> {e}");
                 }
-
-                ImGui.Unindent();
-                ImGui.TreePop();
+                finally
+                {
+                    ImGui.Unindent();
+                    ImGui.TreePop();
+                }
             }
 
             if (ImGui.TreeNode("Only visible InGameUi"))
@@ -456,7 +466,7 @@ namespace DevTree
                             index++;
                         }
 
-                        ImGui.TreePop();
+                        
 
                         return;
                     }

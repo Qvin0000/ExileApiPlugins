@@ -21,14 +21,8 @@ namespace KillCounter
         private int sessionCounter;
         private int summaryCounter;
 
-        public KillCounter()
-        {
-            Order = 100;
-        }
-
         public override bool Initialise()
         {
-            Graphics.InitImage("preload-new.png");
             GameController.LeftPanel.WantUse(() => Settings.Enable);
             countedIds = new Dictionary<uint, HashSet<long>>();
             counters = new Dictionary<MonsterRarity, int>();
@@ -39,6 +33,8 @@ namespace KillCounter
         public override void OnLoad()
         {
             CanUseMultiThreading = true;
+            Order = -10;
+            Graphics.InitImage("preload-new.png");
         }
 
         private void Init()

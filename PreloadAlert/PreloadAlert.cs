@@ -47,7 +47,7 @@ namespace PreloadAlert
 
         public PreloadAlert()
         {
-            Order = 2;
+            Order = -40;
         }
 
         private Dictionary<string, PreloadConfigLine> alerts { get; } = new Dictionary<string, PreloadConfigLine>();
@@ -227,7 +227,9 @@ namespace PreloadAlert
         {
             alertStrings = LoadConfig("config/preload_alerts.txt");
             SetupPredefinedConfigs();
-
+            Graphics.InitImage("preload-start.png");
+            Graphics.InitImage("preload-end.png");
+            Graphics.InitImage("preload-new.png");
             if (File.Exists(PRELOAD_ALERTS_PERSONAL))
                 alertStrings = alertStrings.MergeLeft(LoadConfig(PRELOAD_ALERTS_PERSONAL));
             else
@@ -237,12 +239,7 @@ namespace PreloadAlert
         public override bool Initialise()
         {
             GameController.PluginBridge.SaveMethod($"{nameof(PreloadAlert)}.{nameof(AddPreload)}", AddPreload);
-            Graphics.InitImage("preload-start.png");
-            Graphics.InitImage("preload-end.png");
-            Graphics.InitImage("preload-new.png");
-
             AreaNameColor = Settings.AreaTextColor;
-
             debugInformation = new DebugInformation("Preload alert parsing", false);
             /*GameController.Files.LoadedFiles += (sender, dictionary) =>
             {

@@ -26,6 +26,9 @@ namespace EliteBar
         public override void OnLoad()
         {
             CanUseMultiThreading = true;
+            Graphics.InitImage("directions.png");
+            Graphics.InitImage("healthbar.png");
+            Graphics.InitImage("healthbar_bg.png");
         }
 
         public override Job Tick()
@@ -111,9 +114,6 @@ namespace EliteBar
             };
 
             vect = new Vector2(-0.1f, -0.25f);
-            Graphics.InitImage("directions.png");
-            Graphics.InitImage("healthbar.png");
-            Graphics.InitImage("healthbar_bg.png");
             return true;
         }
 
