@@ -219,7 +219,7 @@ namespace DevTree
                     else
                     {
                         DebugEntities = entites
-                            .Where(x => x.Path.Contains(inputFilter) &&
+                            .Where(x => (x.Path.Contains(inputFilter) || x.Address.ToString("x").ToLower().Contains(inputFilter.ToLower())) &&
                                         x.GetComponent<ObjectMagicProperties>()?.Rarity == selectedRarity &&
                                         x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
                             .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
@@ -235,7 +235,7 @@ namespace DevTree
                     else
                     {
                         DebugEntities = entites
-                            .Where(x => x.Path.Contains(inputFilter) &&
+                            .Where(x => (x.Path.Contains(inputFilter) || x.Address.ToString("x").ToLower().Contains(inputFilter.ToLower())) &&
                                         x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
                             .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
                     }
@@ -360,7 +360,7 @@ namespace DevTree
                 {
                     var debugEntity = DebugEntities[index];
                     var worldtoscreen = camera.WorldToScreen(debugEntity.Pos);
-                    Graphics.DrawBox(worldtoscreen.TranslateToNum(-9, -9), worldtoscreen.TranslateToNum(18, 18), Color.Black);
+              
                     Graphics.DrawText($"{index}", worldtoscreen);
 
                     if (ImGui.TreeNode($"[{index}] {debugEntity}"))
@@ -368,9 +368,16 @@ namespace DevTree
                         Debug(debugEntity);
                         ImGui.TreePop();
                     }
+
+                    var borderColor = Color.Black;
+                    if (ImGui.IsItemHovered())
+                    {
+                        borderColor = Color.DarkSlateGray;
+                    }
+                    Graphics.DrawBox(worldtoscreen.TranslateToNum(-9, -9), worldtoscreen.TranslateToNum(18, 18), borderColor);
                 }
             }
-
+            
             ImGui.End();
         }
 

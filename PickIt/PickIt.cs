@@ -417,7 +417,7 @@ namespace PickIt
 
         private IEnumerator FindItemToPick()
         {
-            if (!Input.GetKeyState(Settings.PickUpKey.Value)) yield break;
+            if (!Input.GetKeyState(Settings.PickUpKey.Value) || !GameController.Window.IsForeground()) yield break;
             var window = GameController.Window.GetWindowRectangleTimeCache;
             var rect = new RectangleF(window.X, window.X, window.X + window.Width, window.Y + window.Height);
             var playerPos = GameController.Player.GridPos;
