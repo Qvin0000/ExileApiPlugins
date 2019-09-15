@@ -75,6 +75,7 @@ namespace Stashie
             SetupOrClose();
 
             Input.RegisterKey(Settings.DropHotkey);
+            Input.RegisterKey(Keys.ShiftKey);
 
             Settings.DropHotkey.OnValueChanged += () => { Input.RegisterKey(Settings.DropHotkey); };
 
@@ -144,47 +145,54 @@ namespace Stashie
         {
             base.DrawSettings();
 
-            if (ImGui.Button("Test"))
+            foreach (var settingsCustomRefillOption in Settings.CustomRefillOptions)
             {
-                TestAction = null;
-                var inventory = GameController.Game.IngameState.IngameUi.InventoryPanel[InventoryIndex.PlayerInventory];
-                var invItems = inventory?.VisibleInventoryItems;
-
-                if (invItems != null)
-                {
-                    var testlist = new List<FilterResult>();
-
-                    foreach (var invItem in invItems)
-                    {
-                        if (invItem.Item == null || invItem.Address == 0 || !invItem.Item.IsValid) continue;
-
-                        if (CheckIgnoreCells(invItem)) continue;
-
-                        var baseItemType = GameController.Files.BaseItemTypes.Translate(invItem.Item.Path);
-
-                        var testItem = new ItemData(invItem, baseItemType);
-                        var result = CheckFilters(testItem);
-
-                        if (result != null) testlist.Add(result);
-                    }
-
-                    testlist = testlist.OrderByDescending(x => x.StashIndex == visibleStashIndex).ThenBy(x => x.StashIndex).ToList();
-
-                    TestAction += () =>
-                    {
-                        ImGui.Begin("Test stashie drop");
-
-                        foreach (var result in testlist)
-                        {
-                            ImGui.Text(
-                                $"{result.Filter.Name} -> {result.ItemData.BaseName} ({result.ItemData.ClassName}) >>> {result.StashIndex} ({StashTabNamesByIndex[result.StashIndex + 1]})");
-                        }
-
-                        if (ImGui.Button("Close")) TestAction = null;
-                        ImGui.End();
-                    };
-                }
+                var value = settingsCustomRefillOption.Value.Value;
+                ImGui.SliderInt(settingsCustomRefillOption.Key, ref value, settingsCustomRefillOption.Value.Min, settingsCustomRefillOption.Value.Max);
+                settingsCustomRefillOption.Value.Value = value;
             }
+
+            //if (ImGui.Button("Test"))
+            //{
+            //    TestAction = null;
+            //    var inventory = GameController.Game.IngameState.IngameUi.InventoryPanel[InventoryIndex.PlayerInventory];
+            //    var invItems = inventory?.VisibleInventoryItems;
+
+            //    if (invItems != null)
+            //    {
+            //        var testlist = new List<FilterResult>();
+
+            //        foreach (var invItem in invItems)
+            //        {
+            //            if (invItem.Item == null || invItem.Address == 0 || !invItem.Item.IsValid) continue;
+
+            //            if (CheckIgnoreCells(invItem)) continue;
+
+            //            var baseItemType = GameController.Files.BaseItemTypes.Translate(invItem.Item.Path);
+
+            //            var testItem = new ItemData(invItem, baseItemType);
+            //            var result = CheckFilters(testItem);
+
+            //            if (result != null) testlist.Add(result);
+            //        }
+
+            //        testlist = testlist.OrderByDescending(x => x.StashIndex == visibleStashIndex).ThenBy(x => x.StashIndex).ToList();
+
+            //        TestAction += () =>
+            //        {
+            //            ImGui.Begin("Test stashie drop");
+
+            //            foreach (var result in testlist)
+            //            {
+            //                ImGui.Text(
+            //                    $"{result.Filter.Name} -> {result.ItemData.BaseName} ({result.ItemData.ClassName}) >>> {result.StashIndex} ({StashTabNamesByIndex[result.StashIndex + 1]})");
+            //            }
+
+            //            if (ImGui.Button("Close")) TestAction = null;
+            //            ImGui.End();
+            //        };
+            //    }
+            //}
 
             FilterTabs?.Invoke();
         }
@@ -299,7 +307,7 @@ namespace Stashie
 
                 if (!Settings.CustomRefillOptions.TryGetValue(refill.MenuName, out amountOption))
                 {
-                    amountOption = new RangeNode<int>(0, 0, refill.StackSize);
+                    amountOption = new RangeNode<int>(15, 0, refill.StackSize);
                     Settings.CustomRefillOptions.Add(refill.MenuName, amountOption);
                 }
 
@@ -400,7 +408,15 @@ namespace Stashie
         {
             DebugTimer.Restart();
             yield return ParseItems();
-            if (_dropItems.Count > 0) yield return DropToStash();
+
+            var cursorPosPreMoving = Input.ForceMousePosition;
+            if (_dropItems.Count > 0)
+            {
+                yield return DropToStash();
+            }
+            yield return ProcessRefills();
+            yield return Input.SetCursorPositionSmooth(new Vector2(cursorPosPreMoving.X, cursorPosPreMoving.Y));
+            Input.MouseMove();
 
             DebugTimer.Restart();
             DebugTimer.Stop();
@@ -474,13 +490,9 @@ namespace Stashie
         private IEnumerator DropToStash()
         {
             coroutineIteration++;
-            var cursorPosPreMoving = Input.ForceMousePosition;
-
+            
             yield return DropItemsToStash();
 
-            // yield return ProcessRefills();
-            yield return Input.SetCursorPositionSmooth(new Vector2(cursorPosPreMoving.X, cursorPosPreMoving.Y));
-            Input.MouseMove();
             CoroutineWorker = Core.ParallelRunner.FindByName(coroutineName);
             CoroutineWorker?.Done();
         }
@@ -737,9 +749,15 @@ namespace Stashie
 
             foreach (var refill in _customRefills)
             {
-                if (refill.OwnedCount == -1) continue;
+                if (refill.OwnedCount == -1)
+                {
+                    continue;
+                }
 
-                if (refill.OwnedCount == refill.AmountOption.Value) continue;
+                if (refill.OwnedCount == refill.AmountOption.Value)
+                {
+                    continue;
+                }
 
                 if (refill.OwnedCount < refill.AmountOption.Value)
 
