@@ -181,3 +181,30 @@ public class MyPluginCore : BaseSettingsPlugin<Settings>
     }
 }
 ```
+
+## Enabling multithreading in plugin
+Plugin can work in own thread, but depends on "Threads count" parameter in hud core menu. 
+
+For enabling multithreading:
+```
+public override void OnLoad()
+{
+    CanUseMultiThreading = true;
+}
+        
+public override Job Tick()
+{
+    if (Settings.MultiThreading)//custom setting ToggleNode
+    {
+        return new Job(nameof(HealthBars), TickLogic);
+    }
+
+    TickLogic();
+    return null;
+}
+
+private void TickLogic()
+{
+    //Do your logic here
+}
+```
