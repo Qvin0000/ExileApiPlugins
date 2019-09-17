@@ -1,4 +1,6 @@
-# ExileApiPlugins
+## ExileApiPlugins
+Plugins for https://github.com/Qvin0000/ExileApi
+
 
 ## For developers:
 # All plugins compilation:
@@ -8,7 +10,7 @@
 * Build it. Plugins should be automatically builded to HUD\PoeHelper\Plugins\Compiled (each to own folder). Make sure they really copied to the right folder after compilation (check dll creation time or delete dll before compilation)
 
 
-## Creating own plugins:
+# Creating own plugins:
 # Plugin project setup:
 * Setup solution as described here: https://github.com/Qvin0000/ExileApi/blob/master/README.md#for-developers
 * Create a new project: 
@@ -77,4 +79,63 @@ namespace MyPlugin
 }
 ```
 
-  
+# Api
+Some basic stuff you may need:
+```
+var player = GameController.Player;
+var playerPos = player.GridPos;
+
+var life = player.GetComponent<Life>();
+var myHp = life.CurHP;
+```
+
+Base plugin functions (all funtions is optionally to override):
+
+**OnLoad()** Called once for each enabled plugin. Use this for most init stuff.
+
+**Initialise** always called on plugin load to hud (even if plugin is disabled). Don't use it like initialization for all the stuff (use OnLoad then), coz plugin could be disabled.
+Return false if plugin can't find/load some resources, etc. It will be disabled in settings.
+```
+public override bool Initialise()
+{
+    if(can't find/load some resource that required for a plugin)
+        return false;
+    return true;
+}
+```
+**OnPluginDestroyForHotReload** called before plugin will be reloaded in memory (after recompilation, etc). You can abort own Threads or unsubscribe from some global events here.
+
+**AreaChange(AreaInstance area)** called after player changed area.
+
+**EntityAddedAny(Entity entity)** called once entity appear in range. Entity is cached and will not triggered again if entity go out of range then appear again .
+
+**EntityAdded(Entity entity)** called once entity appear in range. Same as EntityAddedAny, but will trigger if Monster back to visible range. This is more monnonly used.
+
+**EntityRemoved(Entity entity)** Called when entity removed from cache (probably fo all entities on area change too, not sure).
+
+**Job Tick()** Used for updating logic only.
+
+**Render()** Main function for rendering. Perfectly do only rendering here, for logic update use Tick().
+
+Logging:
+This functions display messages on screen only (no logging to file). For file logging install package Serilog from solution packages manager.
+
+**LogError()**
+
+**LogMessage()**
+
+
+Not implemented functions atm:
+
+**OnUnload()** Not implemented atm. Called on plugin close.
+
+**OnPluginSelectedInMenu()** Called when plugins is selected in main menu (settings opened)
+
+**EntityIgnored(Entity entity)** 
+
+
+
+Draw textures (I recommend to use texture atlas (tutorial later in this giude) if you have a lot of textures, this will greatly improve perfomance):
+```
+
+```
