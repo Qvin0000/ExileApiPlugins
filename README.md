@@ -10,7 +10,7 @@
 
 ## Creating own plugins:
 # Plugin project setup:
-* Setup solution as described here: https://github.com/Qvin0000/ExileApi/blob/master/README.md#for-developers (probably you can skip this and add references to dlls (ExileCore.dll instead Core(ExileApi) project) and other dlls.
+* Setup solution as described here: https://github.com/Qvin0000/ExileApi/blob/master/README.md#for-developers
 * Create a new project: 
 
 Solution->Add->New project
@@ -31,7 +31,50 @@ Note: You can create a folder in solution like CustomPlugins
 
 Also add Project.References->Add reference->Assemblies->System.Numerics to be able to draw something.
 
-Also you can add PoeHelper\SharpDX.Mathematics.dll (this gives you Vector2/3), optionally to ImGui.NET.dll(if you gonna create custom menu). 
+Also you can add PoeHelper\SharpDX.Mathematics.dll (this gives you Vector2, RectangleF, Color), optionally to ImGui.NET.dll(if you gonna create custom menu). 
 
+* Important! Select all ur newly added references in Project.References, go to Properties window and check CopyLocal: false.
 
 Now you can make plugins.
+
+
+# Plugin example:
+Create Settings class:
+```
+using ExileCore.Shared.Attributes;
+using ExileCore.Shared.Interfaces;
+using ExileCore.Shared.Nodes;
+
+namespace MyPlugin
+{
+    public class Settings : ISettings
+    {
+        public ToggleNode Enable { get; set; } = new ToggleNode(true);
+
+        [Menu("Example check box", "This check box disable some functionality")]
+        public ToggleNode MyCheckboxOption { get; set; } = new ToggleNode(true);
+    }
+}
+
+```
+
+Create plugin class MyPluginCore:
+I recommend the plugin class name be uniq (not just Plugin or Core), in this case you will not have any problems with breakpoints is triggered in some other source files with the same name.
+```
+using ExileCore;
+using SharpDX;
+
+namespace MyPlugin
+{
+    public class MyPluginCore : BaseSettingsPlugin<Settings>
+    {
+        public override void Render()
+        {
+            DebugWindow.LogMsg("My plugin works!", 20f);
+            Graphics.DrawBox(new RectangleF(10, 10, 100, 100), Color.Red);
+        }
+    }
+}
+```
+
+  
