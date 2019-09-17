@@ -172,9 +172,6 @@ public class MyPluginCore : BaseSettingsPlugin<Settings>
     public override bool Initialise()
     {
         _iconArcingTexture = GetAtlasTexture("IconArcing");//IconArcing or IconArcing.png, doesn't matter, works both
-
-        if (_iconArcingTexture == null)
-            return false;
         return true;
     }
 
