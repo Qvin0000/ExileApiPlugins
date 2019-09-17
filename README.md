@@ -153,7 +153,7 @@ public override void Render()
    Graphics.DrawImage("TestImage.png", new RectangleF(100, 100, 1000, 100));
 }
 ```
-## Texture atlas optimization (NOTE: work only in DEV branch atm! TODO: Remove after merging to master branch)
+## Texture atlas optimization
 If you have a lot of textures you can put them to texture atlas (all textures in one).
 * Install **Free texture packer** http://free-tex-packer.com/download/
 * Drag all your textures to program to generate an atlas (name nicelly ur image files, you will use their names in code)
