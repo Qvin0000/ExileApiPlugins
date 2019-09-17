@@ -183,7 +183,7 @@ public class MyPluginCore : BaseSettingsPlugin<Settings>
 ```
 
 ## Enabling multithreading in plugin
-Plugin can work in own thread, but depends on "Threads count" parameter in hud core menu. 
+Plugin can work in own thread, but depends on "Threads count" parameter in hud core menu (if it is 0 there is no difference that you enabled multithreading in code). 
 
 For enabling multithreading:
 ```
@@ -194,9 +194,10 @@ public override void OnLoad()
         
 public override Job Tick()
 {
-    if (Settings.MultiThreading)//custom setting ToggleNode
+    if (Settings.MultiThreading)    //custom setting ToggleNode
     {
         return new Job(nameof(HealthBars), TickLogic);
+        //return GameController.MultiThreadManager.AddJob(TickLogic, nameof(HealthBars));   //another way to enable multiprocessing
     }
 
     TickLogic();
@@ -205,6 +206,6 @@ public override Job Tick()
 
 private void TickLogic()
 {
-    //Do your logic here
+    //Do your logic here (separate thread).
 }
 ```
