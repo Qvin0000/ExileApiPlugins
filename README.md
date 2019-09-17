@@ -162,6 +162,7 @@ If you have a lot of textures you can put them to texture atlas (all textures in
 * **Export** it to **HUD\PoeHelper\Plugins\Compiled\MyPlugin\textures folder**, you should get **MyPluginAtlas.json** and **MyPluginAtlas.png**
 
 Then just draw in code:
+
 **NOTE: custom atlas files names is not supported atm, only "atlas" and only for 1 plugin. I'll fix this in next commit. TODO: remove me after pushing commit**
 
 ```
