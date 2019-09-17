@@ -2,7 +2,8 @@
 Plugins for https://github.com/Qvin0000/ExileApi
 
 
-## For developers:
+
+## For developers (this part in in progress, some parts could be not correct or not complete):
 # All plugins compilation:
 * Setup solution as described here: https://github.com/Qvin0000/ExileApi/blob/master/README.md#for-developers
 * Clone this repo to HUD\ExileApi\Plugins\Source folder (HUD is the root directory for ExileApi and PoeHelper folders, can be any name)
@@ -79,7 +80,7 @@ namespace MyPlugin
 }
 ```
 
-# Api
+## Api
 Some basic stuff you may need:
 ```
 var player = GameController.Player;
@@ -89,7 +90,7 @@ var life = player.GetComponent<Life>();
 var myHp = life.CurHP;
 ```
 
-Base plugin functions (all funtions is optionally to override):
+# Base plugin functions (all funtions is optionally to override):
 
 **OnLoad()** Called once for each enabled plugin. Use this for most init stuff.
 
@@ -125,7 +126,7 @@ This functions display messages on screen only (no logging to file). For file lo
 **LogMessage()**
 
 
-Not implemented functions atm:
+# Not implemented functions atm:
 
 **OnUnload()** Not implemented atm. Called on plugin close.
 
@@ -134,8 +135,20 @@ Not implemented functions atm:
 **EntityIgnored(Entity entity)** 
 
 
+# Draw textures
+I recommend to use texture atlas (tutorial later in this giude) if you have a lot of textures, this will greatly improve perfomance:
+```
+public override bool Initialise()
+{
+    var combine = Path.Combine(DirectoryFullName, "TestImage.png").Replace('\\', '/');
+    Graphics.InitImage(combine, false);
 
-Draw textures (I recommend to use texture atlas (tutorial later in this giude) if you have a lot of textures, this will greatly improve perfomance):
+    return true;
+}
+
+public override void Render()
+{
+   Graphics.DrawImage("TestImage.png", new RectangleF(100, 100, 1000, 100));
+}
 ```
 
-```
