@@ -110,9 +110,9 @@ public override bool Initialise()
 
 **AreaChange(AreaInstance area)** called after player changed area.
 
-**EntityAddedAny(Entity entity)** called once entity appear in range. Entity is cached and will not triggered again if entity go out of range then appear again .
+**EntityAddedAny(Entity entity)** called once entity appear in range. Entity is cached and will not triggered again if entity go out of range then appear again.
 
-**EntityAdded(Entity entity)** called once entity appear in range. Same as EntityAddedAny, but will trigger if Monster back to visible range. This is more monnonly used.
+**EntityAdded(Entity entity)** called once entity appear in range. Same as EntityAddedAny, but will trigger if Monster back to visible range. This is more commonly used.
 
 **EntityRemoved(Entity entity)** Called when entity removed from cache (probably fo all entities on area change too, not sure).
 
