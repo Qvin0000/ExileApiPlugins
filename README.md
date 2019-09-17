@@ -74,7 +74,11 @@ namespace MyPlugin
         public override void Render()
         {
             DebugWindow.LogMsg("My plugin works!", 20f);
-            Graphics.DrawBox(new RectangleF(10, 10, 100, 100), Color.Red);
+            
+            if(Settings.MyCheckboxOption)
+            {
+                Graphics.DrawBox(new RectangleF(10, 10, 100, 100), Color.Red);
+            }
         }
     }
 }
