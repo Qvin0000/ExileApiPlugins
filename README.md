@@ -92,10 +92,10 @@ var myHp = life.CurHP;
 
 ## Base plugin functions (all funtions is optionally to override):
 
-**OnLoad()** Called once for each enabled plugin. Use this for most init stuff.
 
-**Initialise** called on load once if plugin is enabled. Don't use it like initialization for all the stuff (use OnLoad then), coz plugin could be disabled.
-Return false if plugin can't find/load some resources, etc. It will be disabled in settings and OnLoad() will not be called.
+
+**Initialise** called on load once if plugin is enabled. Use it like initialization for all the stuff.
+Return false if plugin can't find/load some resources, etc., and in that case OnLoad() will not be called.
 ```
 public override bool Initialise()
 {
@@ -104,6 +104,8 @@ public override bool Initialise()
     return true;
 }
 ```
+**OnLoad()** Called once for each enabled plugin. Called even if plugin is disabled in options, so don't use for loading stuff.
+
 **OnPluginDestroyForHotReload** called before plugin will be reloaded in memory (after recompilation, etc). You can abort own Threads or unsubscribe from some global events here.
 
 **AreaChange(AreaInstance area)** called after player changed area.
