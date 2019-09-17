@@ -24,7 +24,7 @@ ProjectName: **MyPlugin**
 
 Location: fix project location to HUD\ExileApi\Plugins\Source.  
 
-**Framework: 4.8** (Important!). (if you don't have it- install from https://dotnet.microsoft.com/download/thank-you/net48-developer-pack)
+Framework: **4.8** (Important!). (if you don't have it- install from https://dotnet.microsoft.com/download/thank-you/net48-developer-pack)
 
 Note: You can create a folder in solution like CustomPlugins
 
