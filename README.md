@@ -163,8 +163,6 @@ If you have a lot of textures you can put them to texture atlas (all textures in
 
 Then just draw in code:
 
-**NOTE: custom atlas files names is not supported atm, only "atlas" and only for 1 plugin. I'll fix this in next commit. TODO: remove me after pushing commit**
-
 ```
 public class MyPluginCore : BaseSettingsPlugin<Settings>
 {
