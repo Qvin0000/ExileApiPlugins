@@ -190,7 +190,10 @@ namespace MapsExchange
                 Color.YellowGreen
             };
 
-            Graphics.InitImage(Path.Combine(DirectoryFullName, "images/ImagesAtlas.png").Replace('\\', '/'), false);
+            var initImage = Graphics.InitImage(Path.Combine(DirectoryFullName, "images","ImagesAtlas.png"), false);
+            if (!initImage)
+                return false;
+
             Input.RegisterKey(Keys.LControlKey);
             return true;
         }

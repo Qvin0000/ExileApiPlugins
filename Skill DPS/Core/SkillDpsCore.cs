@@ -6,22 +6,34 @@ using ExileCore;
 using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.Shared.Cache;
 using ExileCore.Shared.Enums;
 using SharpDX;
 using Vector2 = System.Numerics.Vector2;
 
 namespace Skill_DPS.Core
 {
+    public class DrawSkills
+    {
+        
+    }
     public class SkillDpsCore : BaseSettingsPlugin<Settings>
     {
+        private TimeCache<bool> _cachedValue;
+        List<Data> skills =new List<Data>();
+
         public override void OnLoad()
         {
             Input.RegisterKey(Keys.LControlKey);
+            Settings.UpdateInterval.OnValueChanged += (sender, i) =>
+            {
+                _cachedValue.NewTime(i);
+            };
+            _cachedValue = new TimeCache<bool>(SkillDPSLogic,Settings.UpdateInterval);
         }
 
-        public override void Render()
+        private bool SkillDPSLogic()
         {
-            base.Render();
             var hoverUi = GameController.Game.IngameState.UIHoverTooltip.Tooltip;
 
             var ids = GameController.IngameState.ServerData.SkillBarIds;
@@ -29,7 +41,7 @@ namespace Skill_DPS.Core
             if (ids == null || ids.Count == 0)
             {
                 LogError("SkillBarIds is null or empty. Check offsets");
-                return;
+                return false;
             }
 
             var actorSkills = RemoteMemoryObject.pTheGame.IngameState.Data.LocalPlayer.GetComponent<Actor>().ActorSkills;
@@ -37,7 +49,7 @@ namespace Skill_DPS.Core
             if (actorSkills == null || actorSkills.Count == 0)
             {
                 LogError("ActorSkills is null or empty. Check offsets");
-                return;
+                return false;
             }
 
             var skillbarChildren = RemoteMemoryObject.pTheGame.IngameState.IngameUi.SkillBar.Children;
@@ -45,21 +57,21 @@ namespace Skill_DPS.Core
             if (skillbarChildren == null || skillbarChildren.Count == 0)
             {
                 LogError("SkillBar.Children is null or empty. Check offsets");
-                return;
+                return false;
             }
 
             if (skillbarChildren.Count < 8)
             {
                 LogError("Expecting at least 8 childs in SkillBar.Children");
-                return;
+                return false;
             }
 
-            var skills = CurrentSkills(ids, actorSkills, skillbarChildren);
+            skills = CurrentSkills(ids, actorSkills, skillbarChildren);
 
             if (skills == null || skills.Count == 0)
             {
                 LogError("skills is null or empty");
-                return;
+                return false;
             }
 
             foreach (var skill in skills)
@@ -88,12 +100,30 @@ namespace Skill_DPS.Core
                 else
                     continue;
 
-                var pos = new Vector2(newBox.Center.X, newBox.Center.Y - Settings.FontSize / 2f);
-                Graphics.DrawText(ToKmb(Convert.ToDecimal(value)), pos, Settings.FontColor, Settings.FontSize, FontAlign.Center);
-
-                Graphics.DrawBox(newBox, Settings.BackgroundColor);
-                Graphics.DrawFrame(newBox, Settings.BorderColor, 1);
+                skill.Value = value;
+                skill.Box = newBox;
+                skill.Pos = new Vector2(newBox.Center.X, newBox.Center.Y - Settings.FontSize / 2f);
             }
+
+            return true;
+        }
+
+
+        public override void Render()
+        {
+            if (!_cachedValue.Value)
+            {
+                return;
+            }
+
+            foreach (var skill in skills)
+            {
+                Graphics.DrawText(ToKmb(Convert.ToDecimal(skill.Value)), skill.Pos, Settings.FontColor, Settings.FontSize, FontAlign.Center);
+                Graphics.DrawBox(skill.Box, Settings.BackgroundColor);
+                Graphics.DrawFrame(skill.Box, Settings.BorderColor, 1);
+            }
+            
+          
         }
 
         public static string ToKmb(decimal num)
@@ -145,6 +175,10 @@ namespace Skill_DPS.Core
         {
             public ActorSkill Skill { get; set; }
             public Element SkillElement { get; set; }
+
+            public RectangleF Box { get; set; }
+            public decimal Value { get; set; }
+            public Vector2 Pos { get; set; }
         }
     }
 }

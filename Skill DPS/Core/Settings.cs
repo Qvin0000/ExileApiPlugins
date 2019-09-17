@@ -19,5 +19,6 @@ namespace Skill_DPS.Core
         [Menu("Border Color")]
         public ColorNode BorderColor { get; set; } = new Color(146, 107, 43, 255);
         public ToggleNode Enable { get; set; } = new ToggleNode(true);
+        public RangeNode<int> UpdateInterval { get; set; } = new RangeNode<int>(1000,100,3000);
     }
 }

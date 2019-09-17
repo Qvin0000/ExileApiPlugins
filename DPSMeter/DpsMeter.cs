@@ -39,7 +39,7 @@ namespace DPSMeter
 
         public DpsMeter()
         {
-            Order = 50;
+            Order = -20;
         }
 
         public override void OnLoad()
