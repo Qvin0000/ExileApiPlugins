@@ -155,7 +155,9 @@ public override void Render()
 If you have a lot of textures you can put them to texture atlas (all textures in one).
 * Install **Free texture packer** http://free-tex-packer.com/download/
 * Drag all your textures to program to generate an atlas (name nicelly ur image files, you will use their names in code)
-* Set setting as on image
+* Use setting as on image
+
+![alt text](https://github.com/Qvin0000/ExileApiPlugins/blob/master/TutorialTextures/atlas_generation.png?raw=true)
 
 * **Export** it to **HUD\PoeHelper\Plugins\Compiled\MyPlugin\textures folder**, you should get **MyPluginAtlas.json** and **MyPluginAtlas.png**
 
