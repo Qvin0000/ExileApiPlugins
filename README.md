@@ -1,47 +1,47 @@
-## ExileApiPlugins
+# ExileApiPlugins
 Plugins for https://github.com/Qvin0000/ExileApi
 
 
 
-## For developers (this part in in progress, some parts could be not correct or not complete):
-# All plugins compilation:
+# For developers (this part in in progress, some parts could be not correct or not complete):
+## All plugins compilation:
 * Setup solution as described here: https://github.com/Qvin0000/ExileApi/blob/master/README.md#for-developers
-* Clone this repo to HUD\ExileApi\Plugins\Source folder (HUD is the root directory for ExileApi and PoeHelper folders, can be any name)
-* Add plugin projects you want to compile to main solution: RMB on solution->Add->Existing project (maybe create a folder in solution for them)
-* Build it. Plugins should be automatically builded to HUD\PoeHelper\Plugins\Compiled (each to own folder). Make sure they really copied to the right folder after compilation (check dll creation time or delete dll before compilation)
+* Clone this repo to **HUD\ExileApi\Plugins\Source folder** (**HUD** is the root directory for **ExileApi** and **PoeHelper** folders, can be any name)
+* Add plugin projects you want to compile to main solution: RMB on **solution->Add->Existing project** (maybe create a folder in solution for them)
+* Build it. Plugins should be automatically builded to **HUD\PoeHelper\Plugins\Compiled** (each to own folder). Make sure they really copied to the right folder after compilation (check dll creation time or delete dll before compilation)
 
 
-# Creating own plugins:
-# Plugin project setup:
+## Creating own plugins:
+## Plugin project setup:
 * Setup solution as described here: https://github.com/Qvin0000/ExileApi/blob/master/README.md#for-developers
 * Create a new project: 
 
 Solution->Add->New project
 
-Type: "Class Library (.Net framework)"
+Type: "**Class Library (.Net framework)**"
 
-ProjectName: MyPlugin
+ProjectName: **MyPlugin**
 
 Location: fix project location to HUD\ExileApi\Plugins\Source.  
 
-Framework: 4.8 (Important!). (if you don't have it- install from https://dotnet.microsoft.com/download/thank-you/net48-developer-pack)
+**Framework: 4.8** (Important!). (if you don't have it- install from https://dotnet.microsoft.com/download/thank-you/net48-developer-pack)
 
 Note: You can create a folder in solution like CustomPlugins
 
-* Create folder for ur plugin in: HUD\PoeHelper\Plugins\Compiled\MyPlugin
-* Go to Project->Properties->Build. Set output path (should be FULL path!). For example C:\\HUD\PoeHelper\Plugins\Compiled\MyPlugin
-* Add reference to Core(ExileApi) project: Project.References->Add reference->Projects->Core. 
+* Create folder for ur plugin in: **HUD\PoeHelper\Plugins\Compiled\MyPlugin**
+* Go to **Project->Properties->Build**. Set output path (should be FULL path!). For example **C:\\HUD\PoeHelper\Plugins\Compiled\MyPlugin**
+* Add reference to **Core**(ExileApi) project: **Project.References->Add reference->Projects->Core**. 
 
-Also add Project.References->Add reference->Assemblies->System.Numerics to be able to draw something.
+Also add **Project.References->Add reference->Assemblies->System.Numerics** to be able to draw something.
 
-Also you can add PoeHelper\SharpDX.Mathematics.dll (this gives you Vector2, RectangleF, Color), optionally to ImGui.NET.dll(if you gonna create custom menu). 
+Also you can add **PoeHelper\SharpDX.Mathematics.dll** (this gives you Vector2, RectangleF, Color), optionally to ImGui.NET.dll(if you gonna create custom menu). 
 
 * Important! Select all ur newly added references in Project.References, go to Properties window and check CopyLocal: false.
 
 Now you can make plugins.
 
 
-# Plugin example:
+## Plugin example:
 Create Settings class:
 ```
 using ExileCore.Shared.Attributes;
@@ -80,7 +80,7 @@ namespace MyPlugin
 }
 ```
 
-## Api
+# Api
 Some basic stuff you may need:
 ```
 var player = GameController.Player;
@@ -90,12 +90,12 @@ var life = player.GetComponent<Life>();
 var myHp = life.CurHP;
 ```
 
-# Base plugin functions (all funtions is optionally to override):
+## Base plugin functions (all funtions is optionally to override):
 
 **OnLoad()** Called once for each enabled plugin. Use this for most init stuff.
 
-**Initialise** always called on plugin load to hud (even if plugin is disabled). Don't use it like initialization for all the stuff (use OnLoad then), coz plugin could be disabled.
-Return false if plugin can't find/load some resources, etc. It will be disabled in settings.
+**Initialise** called on load once if plugin is enabled. Don't use it like initialization for all the stuff (use OnLoad then), coz plugin could be disabled.
+Return false if plugin can't find/load some resources, etc. It will be disabled in settings and OnLoad() will not be called.
 ```
 public override bool Initialise()
 {
@@ -126,7 +126,7 @@ This functions display messages on screen only (no logging to file). For file lo
 **LogMessage()**
 
 
-# Not implemented functions atm:
+## Not implemented functions atm:
 
 **OnUnload()** Not implemented atm. Called on plugin close.
 
@@ -135,7 +135,7 @@ This functions display messages on screen only (no logging to file). For file lo
 **EntityIgnored(Entity entity)** 
 
 
-# Draw textures
+## Draw textures
 I recommend to use texture atlas (tutorial later in this giude) if you have a lot of textures, this will greatly improve perfomance:
 ```
 public override bool Initialise()
@@ -151,4 +151,33 @@ public override void Render()
    Graphics.DrawImage("TestImage.png", new RectangleF(100, 100, 1000, 100));
 }
 ```
+## Texture atlas optimization (NOTE: work only in DEV branch atm! TODO: Remove after merging to master branch)
+If you have a lot of textures you can put them to texture atlas (all textures in one).
+* Install **Free texture packer** http://free-tex-packer.com/download/
+* Drag all your textures to program to generate an atlas (name nicelly ur image files, you will use their names in code)
+* Set setting as on image
 
+* **Export** it to **HUD\PoeHelper\Plugins\Compiled\MyPlugin\textures folder**, you should get **MyPluginAtlas.json** and **MyPluginAtlas.png**
+
+Then just draw in code:
+**NOTE: custom atlas files names is not supported atm, only "atlas" and only for 1 plugin. I'll fix this in next commit. TODO: remove me after pushing commit**
+
+```
+public class MyPluginCore : BaseSettingsPlugin<Settings>
+{
+    private AtlasTexture _iconArcingTexture;
+    public override bool Initialise()
+    {
+        _iconArcingTexture = GetAtlasTexture("IconArcing");//IconArcing or IconArcing.png, doesn't matter, works both
+
+        if (_iconArcingTexture == null)
+            return false;
+        return true;
+    }
+
+    public override void Render()
+    {
+        Graphics.DrawImage(_iconArcingTexture, new RectangleF(10, 10, 1000, 1000));
+    }
+}
+```
