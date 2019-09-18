@@ -394,7 +394,7 @@ namespace Stashie
                 Input.KeyUp(Keys.LControlKey);
             }
 
-            if (Input.IsKeyDown((int) Settings.DropHotkey.Value))
+            if (Settings.DropHotkey.PressedOnce())
             {
                 if (uiTabsOpened)
                 {

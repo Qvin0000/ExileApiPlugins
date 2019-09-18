@@ -29,6 +29,14 @@ namespace Stashie
             BaseName = baseItemType.BaseName;
             MapTier = item.HasComponent<Map>() ? item.GetComponent<Map>().Tier : 0;
             clientRect = InventoryItem.GetClientRect().Center;
+
+            var sockets = item.GetComponent<Sockets>();
+
+            if (sockets != null)
+            {
+                NumberOfSockets = sockets.NumberOfSockets;
+                LargestLinkSize = sockets.LargestLinkSize;
+            }
         }
 
         public NormalInventoryItem InventoryItem { get; }
@@ -44,7 +52,8 @@ namespace Stashie
         public bool isShaper { get; }
         public bool isFractured { get; }
         public Vector2 clientRect { get; }
-
+        public int NumberOfSockets{ get; }
+        public int LargestLinkSize{ get; }
         public Vector2 GetClickPosCache()
         {
             return clientRect;
