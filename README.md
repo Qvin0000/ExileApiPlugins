@@ -235,10 +235,12 @@ public override Job Tick()
 private IEnumerator ProcessInventoryItems()
 {
     //Do your code here
-    yield return new WaitTime(100); //100ms delay
+    yield return new WaitTime(100); //Here is example for 100ms delay
 }
+```
 
-//You can also stop/abort routine in any moment:
+You can also stop/abort routine in any moment:
+```
 private void StopRoutine()
 {
     if (CoroutineWorker != null && !CoroutineWorker.IsDone)
@@ -264,4 +266,12 @@ public override Job Tick()
     return null;
 }
 
+```
+
+Available delay functionality from API:
+```
+yield return new WaitTime(100); //Delay for 100ms
+yield return new WaitFunction(() => isMyBoolEnabled); //wait for some condition. Instead of this can be a function that returns bool (no args)
+yield return new WaitRender(3); //Skips the given amount of render frames
+yield return new WaitRandom(100, 300); //Wait for random amount of milliseconds
 ```
