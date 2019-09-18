@@ -213,3 +213,55 @@ private void TickLogic()
     //Do your logic here (separate thread).
 }
 ```
+
+## Coroutines (multithreading)
+If you need to make some code that need to do some delays (like drop inventory items, enabling auras, etc.) do it in routines (don't use Thread.Sleep in main thread!, it will slow down other plugins!).
+
+```
+private Coroutine CoroutineWorker;
+private const string coroutineName = "my example routine";
+   
+public override Job Tick()
+{
+    if (Settings.DropHotkey.PressedOnce())
+    {
+            CoroutineWorker = new Coroutine(ProcessInventoryItems(), this, coroutineName);
+            Core.ParallelRunner.Run(CoroutineWorker);
+    }
+    
+    return null;
+}
+
+private IEnumerator ProcessInventoryItems()
+{
+    //Do your code here
+    yield return new WaitTime(100); //100ms delay
+}
+
+//You can also stop/abort routine in any moment:
+private void StopRoutine()
+{
+    if (CoroutineWorker != null && !CoroutineWorker.IsDone)
+    {
+        CoroutineWorker = Core.ParallelRunner.FindByName(coroutineName);
+        CoroutineWorker?.Done();
+    }
+}
+```
+
+Also you can check if routine is processing too much time and stop it:
+```
+public override Job Tick()
+{
+    ...
+    
+    if (CoroutineWorker != null && CoroutineWorker.Running && DebugTimer.ElapsedMilliseconds > 15000)
+    {
+        LogError($"Routine stopped because work more than 15 sec.", 15);
+        CoroutineWorker?.Done();
+    }
+    
+    return null;
+}
+
+```
