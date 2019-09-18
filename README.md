@@ -214,7 +214,7 @@ private void TickLogic()
 }
 ```
 
-## Coroutines (multithreading)
+## Coroutines (for delays in code)
 If you need to make some code that need to do some delays (like drop inventory items, enabling auras, etc.) do it in routines (don't use Thread.Sleep in main thread!, it will slow down other plugins!).
 
 ```
