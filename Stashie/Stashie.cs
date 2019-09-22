@@ -502,6 +502,7 @@ namespace Stashie
             var tries = 0;
             var index = 0;
             NormalInventoryItem lastHoverItem = null;
+            PublishEvent("stashie_start_drop_items", null);
 
             while (_dropItems.Count > 0 && tries < 2)
             {
@@ -554,6 +555,9 @@ namespace Stashie
                             }
 
                             yield return new WaitTime(100);
+
+                            PublishEvent("stashie_finish_drop_items_to_stash_tab", null);
+
                             if (!waited) waitedItems.Clear();
 
                             if (DebugTimer.ElapsedMilliseconds > tryTime)
@@ -647,6 +651,8 @@ namespace Stashie
                         waitedItems.Add(stashResults);
 
                     DebugTimer.Restart();
+
+                    PublishEvent("stashie_finish_drop_items_to_stash_tab", null);
                 }
 
                 if (Settings.VisitTabWhenDone.Value) yield return SwitchToTab(Settings.TabToVisitWhenDone.Value);
@@ -654,6 +660,8 @@ namespace Stashie
                 Input.KeyUp(Keys.LControlKey);
                 yield return ParseItems();
             }
+
+            PublishEvent("stashie_stop_drop_items", null);
         }
 
         #region Refill
