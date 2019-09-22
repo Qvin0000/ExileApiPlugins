@@ -30,7 +30,6 @@ namespace Stashie
         private readonly Stopwatch StackItemTimer = new Stopwatch();
         private readonly WaitTime wait10ms = new WaitTime(10);
         private readonly WaitTime wait3ms = new WaitTime(3);
-        private bool _bDropOnce;
         private Vector2 _clickWindowOffset;
         private List<CustomFilter> _customFilters;
         private List<RefillProcessor> _customRefills;
@@ -39,17 +38,11 @@ namespace Stashie
         private List<ListIndexNode> _settingsListNodes;
         private uint coroutineIteration;
         private Coroutine CoroutineWorker;
-        private bool CtrlDown;
         private Action FilterTabs;
-        private CircularBuffer<string> HistoryOfWork = new CircularBuffer<string>(1024);
-        private bool openned;
-        private bool popup;
         private string[] StashTabNamesByIndex;
         private Coroutine StashTabNamesCoroutine;
         private Action TestAction;
         private int visibleStashIndex = -1;
-        private WaitTime wait1ms = new WaitTime(1);
-        private WaitTime wait50ms = new WaitTime(50);
 
         public StashieCore()
         {
@@ -367,7 +360,6 @@ namespace Stashie
             if (CoroutineWorker != null && CoroutineWorker.IsDone)
             {
                 Input.KeyUp(Keys.LControlKey);
-                CtrlDown = false;
                 CoroutineWorker = null;
             }
 
@@ -874,7 +866,7 @@ namespace Stashie
             var delay = (int) GameController.Game.IngameState.CurLatency * 2 + Settings.ExtraDelay;
             Input.KeyDown(Keys.ShiftKey);
 
-            while (!Input.IsKeyDown((int) Keys.ShiftKey))
+            while (!Input.IsKeyDown(Keys.ShiftKey))
             {
                 yield return new WaitTime(WHILE_DELAY);
             }
