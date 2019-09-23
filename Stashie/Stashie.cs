@@ -410,6 +410,9 @@ namespace Stashie
             yield return Input.SetCursorPositionSmooth(new Vector2(cursorPosPreMoving.X, cursorPosPreMoving.Y));
             Input.MouseMove();
 
+            CoroutineWorker = Core.ParallelRunner.FindByName(coroutineName);
+            CoroutineWorker?.Done();
+
             DebugTimer.Restart();
             DebugTimer.Stop();
         }
@@ -484,9 +487,6 @@ namespace Stashie
             coroutineIteration++;
             
             yield return DropItemsToStash();
-
-            CoroutineWorker = Core.ParallelRunner.FindByName(coroutineName);
-            CoroutineWorker?.Done();
         }
 
         private IEnumerator DropItemsToStash()
