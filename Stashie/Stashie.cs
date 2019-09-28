@@ -30,7 +30,6 @@ namespace Stashie
         private readonly Stopwatch StackItemTimer = new Stopwatch();
         private readonly WaitTime wait10ms = new WaitTime(10);
         private readonly WaitTime wait3ms = new WaitTime(3);
-        private bool _bDropOnce;
         private Vector2 _clickWindowOffset;
         private List<CustomFilter> _customFilters;
         private List<RefillProcessor> _customRefills;
@@ -39,17 +38,11 @@ namespace Stashie
         private List<ListIndexNode> _settingsListNodes;
         private uint coroutineIteration;
         private Coroutine CoroutineWorker;
-        private bool CtrlDown;
         private Action FilterTabs;
-        private CircularBuffer<string> HistoryOfWork = new CircularBuffer<string>(1024);
-        private bool openned;
-        private bool popup;
         private string[] StashTabNamesByIndex;
         private Coroutine StashTabNamesCoroutine;
         private Action TestAction;
         private int visibleStashIndex = -1;
-        private WaitTime wait1ms = new WaitTime(1);
-        private WaitTime wait50ms = new WaitTime(50);
 
         public StashieCore()
         {
@@ -75,6 +68,7 @@ namespace Stashie
             SetupOrClose();
 
             Input.RegisterKey(Settings.DropHotkey);
+            Input.RegisterKey(Keys.ShiftKey);
 
             Settings.DropHotkey.OnValueChanged += () => { Input.RegisterKey(Settings.DropHotkey); };
 
@@ -144,47 +138,54 @@ namespace Stashie
         {
             base.DrawSettings();
 
-            if (ImGui.Button("Test"))
+            foreach (var settingsCustomRefillOption in Settings.CustomRefillOptions)
             {
-                TestAction = null;
-                var inventory = GameController.Game.IngameState.IngameUi.InventoryPanel[InventoryIndex.PlayerInventory];
-                var invItems = inventory?.VisibleInventoryItems;
-
-                if (invItems != null)
-                {
-                    var testlist = new List<FilterResult>();
-
-                    foreach (var invItem in invItems)
-                    {
-                        if (invItem.Item == null || invItem.Address == 0 || !invItem.Item.IsValid) continue;
-
-                        if (CheckIgnoreCells(invItem)) continue;
-
-                        var baseItemType = GameController.Files.BaseItemTypes.Translate(invItem.Item.Path);
-
-                        var testItem = new ItemData(invItem, baseItemType);
-                        var result = CheckFilters(testItem);
-
-                        if (result != null) testlist.Add(result);
-                    }
-
-                    testlist = testlist.OrderByDescending(x => x.StashIndex == visibleStashIndex).ThenBy(x => x.StashIndex).ToList();
-
-                    TestAction += () =>
-                    {
-                        ImGui.Begin("Test stashie drop");
-
-                        foreach (var result in testlist)
-                        {
-                            ImGui.Text(
-                                $"{result.Filter.Name} -> {result.ItemData.BaseName} ({result.ItemData.ClassName}) >>> {result.StashIndex} ({StashTabNamesByIndex[result.StashIndex + 1]})");
-                        }
-
-                        if (ImGui.Button("Close")) TestAction = null;
-                        ImGui.End();
-                    };
-                }
+                var value = settingsCustomRefillOption.Value.Value;
+                ImGui.SliderInt(settingsCustomRefillOption.Key, ref value, settingsCustomRefillOption.Value.Min, settingsCustomRefillOption.Value.Max);
+                settingsCustomRefillOption.Value.Value = value;
             }
+
+            //if (ImGui.Button("Test"))
+            //{
+            //    TestAction = null;
+            //    var inventory = GameController.Game.IngameState.IngameUi.InventoryPanel[InventoryIndex.PlayerInventory];
+            //    var invItems = inventory?.VisibleInventoryItems;
+
+            //    if (invItems != null)
+            //    {
+            //        var testlist = new List<FilterResult>();
+
+            //        foreach (var invItem in invItems)
+            //        {
+            //            if (invItem.Item == null || invItem.Address == 0 || !invItem.Item.IsValid) continue;
+
+            //            if (CheckIgnoreCells(invItem)) continue;
+
+            //            var baseItemType = GameController.Files.BaseItemTypes.Translate(invItem.Item.Path);
+
+            //            var testItem = new ItemData(invItem, baseItemType);
+            //            var result = CheckFilters(testItem);
+
+            //            if (result != null) testlist.Add(result);
+            //        }
+
+            //        testlist = testlist.OrderByDescending(x => x.StashIndex == visibleStashIndex).ThenBy(x => x.StashIndex).ToList();
+
+            //        TestAction += () =>
+            //        {
+            //            ImGui.Begin("Test stashie drop");
+
+            //            foreach (var result in testlist)
+            //            {
+            //                ImGui.Text(
+            //                    $"{result.Filter.Name} -> {result.ItemData.BaseName} ({result.ItemData.ClassName}) >>> {result.StashIndex} ({StashTabNamesByIndex[result.StashIndex + 1]})");
+            //            }
+
+            //            if (ImGui.Button("Close")) TestAction = null;
+            //            ImGui.End();
+            //        };
+            //    }
+            //}
 
             FilterTabs?.Invoke();
         }
@@ -299,7 +300,7 @@ namespace Stashie
 
                 if (!Settings.CustomRefillOptions.TryGetValue(refill.MenuName, out amountOption))
                 {
-                    amountOption = new RangeNode<int>(0, 0, refill.StackSize);
+                    amountOption = new RangeNode<int>(15, 0, refill.StackSize);
                     Settings.CustomRefillOptions.Add(refill.MenuName, amountOption);
                 }
 
@@ -359,7 +360,6 @@ namespace Stashie
             if (CoroutineWorker != null && CoroutineWorker.IsDone)
             {
                 Input.KeyUp(Keys.LControlKey);
-                CtrlDown = false;
                 CoroutineWorker = null;
             }
 
@@ -386,7 +386,7 @@ namespace Stashie
                 Input.KeyUp(Keys.LControlKey);
             }
 
-            if (Input.IsKeyDown((int) Settings.DropHotkey.Value))
+            if (Settings.DropHotkey.PressedOnce())
             {
                 if (uiTabsOpened)
                 {
@@ -400,7 +400,18 @@ namespace Stashie
         {
             DebugTimer.Restart();
             yield return ParseItems();
-            if (_dropItems.Count > 0) yield return DropToStash();
+
+            var cursorPosPreMoving = Input.ForceMousePosition;
+            if (_dropItems.Count > 0)
+            {
+                yield return DropToStash();
+            }
+            yield return ProcessRefills();
+            yield return Input.SetCursorPositionSmooth(new Vector2(cursorPosPreMoving.X, cursorPosPreMoving.Y));
+            Input.MouseMove();
+
+            CoroutineWorker = Core.ParallelRunner.FindByName(coroutineName);
+            CoroutineWorker?.Done();
 
             DebugTimer.Restart();
             DebugTimer.Stop();
@@ -474,15 +485,8 @@ namespace Stashie
         private IEnumerator DropToStash()
         {
             coroutineIteration++;
-            var cursorPosPreMoving = Input.ForceMousePosition;
-
+            
             yield return DropItemsToStash();
-
-            // yield return ProcessRefills();
-            yield return Input.SetCursorPositionSmooth(new Vector2(cursorPosPreMoving.X, cursorPosPreMoving.Y));
-            Input.MouseMove();
-            CoroutineWorker = Core.ParallelRunner.FindByName(coroutineName);
-            CoroutineWorker?.Done();
         }
 
         private IEnumerator DropItemsToStash()
@@ -490,6 +494,7 @@ namespace Stashie
             var tries = 0;
             var index = 0;
             NormalInventoryItem lastHoverItem = null;
+            PublishEvent("stashie_start_drop_items", null);
 
             while (_dropItems.Count > 0 && tries < 2)
             {
@@ -542,6 +547,9 @@ namespace Stashie
                             }
 
                             yield return new WaitTime(100);
+
+                            PublishEvent("stashie_finish_drop_items_to_stash_tab", null);
+
                             if (!waited) waitedItems.Clear();
 
                             if (DebugTimer.ElapsedMilliseconds > tryTime)
@@ -635,6 +643,8 @@ namespace Stashie
                         waitedItems.Add(stashResults);
 
                     DebugTimer.Restart();
+
+                    PublishEvent("stashie_finish_drop_items_to_stash_tab", null);
                 }
 
                 if (Settings.VisitTabWhenDone.Value) yield return SwitchToTab(Settings.TabToVisitWhenDone.Value);
@@ -642,6 +652,8 @@ namespace Stashie
                 Input.KeyUp(Keys.LControlKey);
                 yield return ParseItems();
             }
+
+            PublishEvent("stashie_stop_drop_items", null);
         }
 
         #region Refill
@@ -737,9 +749,15 @@ namespace Stashie
 
             foreach (var refill in _customRefills)
             {
-                if (refill.OwnedCount == -1) continue;
+                if (refill.OwnedCount == -1)
+                {
+                    continue;
+                }
 
-                if (refill.OwnedCount == refill.AmountOption.Value) continue;
+                if (refill.OwnedCount == refill.AmountOption.Value)
+                {
+                    continue;
+                }
 
                 if (refill.OwnedCount < refill.AmountOption.Value)
 
@@ -848,7 +866,7 @@ namespace Stashie
             var delay = (int) GameController.Game.IngameState.CurLatency * 2 + Settings.ExtraDelay;
             Input.KeyDown(Keys.ShiftKey);
 
-            while (!Input.IsKeyDown((int) Keys.ShiftKey))
+            while (!Input.IsKeyDown(Keys.ShiftKey))
             {
                 yield return new WaitTime(WHILE_DELAY);
             }

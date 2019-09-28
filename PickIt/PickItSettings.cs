@@ -20,7 +20,6 @@ namespace PickIt
             RGB = new ToggleNode(true);
             AllDivs = new ToggleNode(true);
             AllCurrency = new ToggleNode(true);
-            IgnoreScrollOfWisdom = new ToggleNode(true);
             AllUniques = new ToggleNode(true);
             Maps = new ToggleNode(true);
             UniqueMap = new ToggleNode(true);
@@ -107,7 +106,6 @@ namespace PickIt
         public ToggleNode PickUpEverything { get; set; }
         public ToggleNode AllDivs { get; set; }
         public ToggleNode AllCurrency { get; set; }
-        public ToggleNode IgnoreScrollOfWisdom { get; set; }
         public ToggleNode AllUniques { get; set; }
         public ToggleNode Maps { get; set; }
         public RangeNode<int> MapTier { get; set; }

@@ -59,6 +59,11 @@ namespace IconsBuilder
             }
         }
 
+        public override void OnLoad()
+        {
+            Graphics.InitImage("sprites.png");
+        }
+
         public override void EntityIgnored(Entity Entity)
         {
             if (!Settings.Enable.Value) return;
@@ -92,7 +97,7 @@ namespace IconsBuilder
         public override bool Initialise()
         {
             LoadConfig();
-            Graphics.InitImage("sprites.png");
+            
 
             Settings.Reparse.OnPressed += () =>
             {

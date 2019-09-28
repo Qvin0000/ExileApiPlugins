@@ -25,6 +25,12 @@ namespace AdvancedTooltip
         private Color TColor;
         private Dictionary<int, Color> TColors;
 
+        public override void OnLoad()
+        {
+            Graphics.InitImage("menu-colors.png");
+            Graphics.InitImage("preload-end.png");
+        }
+
         public override bool Initialise()
         {
             TColors = new Dictionary<int, Color>
@@ -39,8 +45,7 @@ namespace AdvancedTooltip
                 if (keys == Keys.F9) Settings.ItemMods.Enable.Value = !Settings.ItemMods.Enable.Value;
             };
 
-            Graphics.InitImage("menu-colors.png");
-            Graphics.InitImage("preload-end.png");
+            
             return true;
         }
 

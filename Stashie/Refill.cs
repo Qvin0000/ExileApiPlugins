@@ -124,7 +124,7 @@ namespace Stashie
 
     public class RefillProcessor
     {
-        public RangeNode<int> AmountOption;
+        public RangeNode<int> AmountOption { get; set; }
         public Vector2 ClickPos;
         public string CurrencyClass;
         public Point InventPos;

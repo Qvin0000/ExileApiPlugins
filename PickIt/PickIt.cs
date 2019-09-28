@@ -7,26 +7,22 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using ExileCore;
-using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared;
 using ExileCore.Shared.Enums;
 using ExileCore.Shared.Helpers;
 using SharpDX;
-using Input = ExileCore.Input;
 
 namespace PickIt
 {
     public class PickIt : BaseSettingsPlugin<PickItSettings>
     {
         private const string PickitRuleDirectory = "Pickit Rules";
-        private readonly List<Entity> _entities = new List<Entity>();
-        private readonly Stopwatch _pickUpTimer = Stopwatch.StartNew();
-        private readonly Stopwatch DebugTimer = Stopwatch.StartNew();
-        private readonly WaitTime toPick = new WaitTime(10);
-        private readonly WaitTime wait3ms = new WaitTime(3);
-        private readonly WaitTime waitForNextTry = new WaitTime(33);
+        private readonly Stopwatch _debugTimer = Stopwatch.StartNew();
+        private readonly WaitTime _toPick = new WaitTime(10);
+        private readonly WaitTime _wait3Ms = new WaitTime(3);
+        private readonly WaitTime _waitForNextTry = new WaitTime(33);
         private Vector2 _clickWindowOffset;
         private HashSet<string> _magicRules;
         private HashSet<string> _normalRules;
@@ -34,21 +30,12 @@ namespace PickIt
         private HashSet<string> _uniqueRules;
         private Dictionary<string, int> _weightsRules = new Dictionary<string, int>();
         private WaitTime _workCoroutine;
-        public DateTime buildDate;
-        private uint coroutineCounter;
-        private Vector2 cursorBeforePickIt;
-        private bool CustomRulesExists = true;
-        private bool FullWork = true;
-        private Element LastLabelClick;
-        public string MagicRuleFile;
-        private WaitTime mainWorkCoroutine = new WaitTime(5);
-        public string NormalRuleFile;
-        private Coroutine pickItCoroutine;
-        public string RareRuleFile;
-        private WaitTime tryToPick = new WaitTime(7);
-        public string UniqueRuleFile;
-        private WaitTime waitPlayerMove = new WaitTime(10);
-
+        public DateTime BuildDate;
+        private uint _coroutineCounter;
+        private bool _customRulesExists = true;
+        private bool _fullWork = true;
+        private Coroutine _pickItCoroutine;
+        private List<string> _ignoredCurrency;
         public PickIt()
         {
             Name = "Pickit";
@@ -61,17 +48,39 @@ namespace PickIt
 
         public override bool Initialise()
         {
-            buildDate = new DateTime(2000, 1, 1).AddDays(Version.Build).AddSeconds(Version.Revision * 2);
+            BuildDate = new DateTime(2000, 1, 1).AddDays(Version.Build).AddSeconds(Version.Revision * 2);
             PluginVersion = $"{Version}";
-            pickItCoroutine = new Coroutine(MainWorkCoroutine(), this, "Pick It");
-            Core.ParallelRunner.Run(pickItCoroutine);
-            pickItCoroutine.Pause();
-            DebugTimer.Reset();
+            _pickItCoroutine = new Coroutine(MainWorkCoroutine(), this, "Pick It");
+            Core.ParallelRunner.Run(_pickItCoroutine);
+            _pickItCoroutine.Pause();
+            _debugTimer.Reset();
             Settings.MouseSpeed.OnValueChanged += (sender, f) => { Mouse.speedMouse = Settings.MouseSpeed.Value; };
             _workCoroutine = new WaitTime(Settings.ExtraDelay);
             Settings.ExtraDelay.OnValueChanged += (sender, i) => _workCoroutine = new WaitTime(i);
             LoadRuleFiles();
+            LoadIgnoredCurrency();
             return true;
+        }
+
+        private void LoadIgnoredCurrency()
+        {
+            var cfgPath = Path.Combine(DirectoryFullName, "ignored_currency.txt");
+
+            if (!File.Exists(cfgPath))
+            {
+                File.WriteAllLines(cfgPath, new []
+                {
+                    "Portal Scroll",
+                    "Scroll of Wisdom",
+                    "Orb of Transmutation",
+                    "Orb of Augmentation",
+                    "Orb of Alteration",
+                    "Armourer's Scrap",
+                    "Blacksmith's Whetstone"
+                });
+            }
+
+            _ignoredCurrency = File.ReadAllLines(cfgPath).Where(x => !string.IsNullOrEmpty(x)).ToList();
         }
 
         private IEnumerator MainWorkCoroutine()
@@ -80,8 +89,8 @@ namespace PickIt
             {
                 yield return FindItemToPick();
 
-                coroutineCounter++;
-                pickItCoroutine.UpdateTicks(coroutineCounter);
+                _coroutineCounter++;
+                _pickItCoroutine.UpdateTicks(_coroutineCounter);
                 yield return _workCoroutine;
             }
         }
@@ -202,37 +211,37 @@ namespace PickIt
 
         public override Job Tick()
         {
-            if (Input.GetKeyState(Keys.Escape)) pickItCoroutine.Pause();
+            if (Input.GetKeyState(Keys.Escape)) _pickItCoroutine.Pause();
 
             if (Input.GetKeyState(Settings.PickUpKey.Value))
             {
-                DebugTimer.Restart();
+                _debugTimer.Restart();
 
-                if (pickItCoroutine.IsDone)
+                if (_pickItCoroutine.IsDone)
                 {
                     var firstOrDefault = Core.ParallelRunner.Coroutines.FirstOrDefault(x => x.OwnerName == nameof(PickIt));
 
                     if (firstOrDefault != null)
-                        pickItCoroutine = firstOrDefault;
+                        _pickItCoroutine = firstOrDefault;
                 }
 
-                pickItCoroutine.Resume();
-                FullWork = false;
+                _pickItCoroutine.Resume();
+                _fullWork = false;
             }
             else
             {
-                if (FullWork)
+                if (_fullWork)
                 {
-                    pickItCoroutine.Pause();
-                    DebugTimer.Reset();
+                    _pickItCoroutine.Pause();
+                    _debugTimer.Reset();
                 }
             }
 
-            if (DebugTimer.ElapsedMilliseconds > 2000)
+            if (_debugTimer.ElapsedMilliseconds > 2000)
             {
-                FullWork = true;
-                LogMessage("Error pick it stop after time limit 2000 ms", 1);
-                DebugTimer.Reset();
+                _fullWork = true;
+                LogMessage("Error pick it stop after time limit 2000 ms");
+                _debugTimer.Reset();
             }
 
             return null;
@@ -252,8 +261,7 @@ namespace PickIt
 
                 if (Settings.AllCurrency && item.ClassName.EndsWith("Currency"))
                 {
-                    return !item.Path.Equals("Metadata/Items/Currency/CurrencyIdentification", StringComparison.Ordinal) ||
-                           !Settings.IgnoreScrollOfWisdom;
+                    return !_ignoredCurrency.Contains(item.BaseName);
                 }
 
                 #endregion
@@ -365,7 +373,7 @@ namespace PickIt
 
             #region Rarity Rule Switch
 
-            if (CustomRulesExists)
+            if (_customRulesExists)
             {
                 switch (itemEntity.Rarity)
                 {
@@ -417,7 +425,7 @@ namespace PickIt
 
         private IEnumerator FindItemToPick()
         {
-            if (!Input.GetKeyState(Settings.PickUpKey.Value)) yield break;
+            if (!Input.GetKeyState(Settings.PickUpKey.Value) || !GameController.Window.IsForeground()) yield break;
             var window = GameController.Window.GetWindowRectangleTimeCache;
             var rect = new RectangleF(window.X, window.X, window.X + window.Width, window.Y + window.Height);
             var playerPos = GameController.Player.GridPos;
@@ -452,14 +460,14 @@ namespace PickIt
             GameController.Debug["PickIt"] = currentLabels;
             var pickUpThisItem = currentLabels.FirstOrDefault(x => DoWePickThis(x) && x.Distance < Settings.PickupRange);
             if (pickUpThisItem?.GroundItem != null) yield return TryToPickV2(pickUpThisItem);
-            FullWork = true;
+            _fullWork = true;
         }
 
         private IEnumerator TryToPickV2(CustomItem pickItItem)
         {
             if (!pickItItem.IsValid)
             {
-                FullWork = true;
+                _fullWork = true;
                 LogMessage("PickItem is not valid.", 5, Color.Red);
                 yield break;
             }
@@ -474,7 +482,7 @@ namespace PickIt
 
             if (!rectangleOfGameWindow.Intersects(new RectangleF(centerOfItemLabel.X, centerOfItemLabel.Y, 3, 3)))
             {
-                FullWork = true;
+                _fullWork = true;
                 LogMessage($"Label outside game window. Label: {centerOfItemLabel} Window: {rectangleOfGameWindow}", 5, Color.Red);
                 yield break;
             }
@@ -508,11 +516,11 @@ namespace PickIt
                 var vector2 = clientRectCenter + _clickWindowOffset;
 
                 Mouse.MoveCursorToPosition(vector2);
-                yield return wait3ms;
+                yield return _wait3Ms;
                 Mouse.MoveCursorToPosition(vector2);
-                yield return wait3ms;
+                yield return _wait3Ms;
                 yield return Mouse.LeftClick();
-                yield return toPick;
+                yield return _toPick;
                 tryCount++;
             }
 
@@ -525,10 +533,10 @@ namespace PickIt
                        x => x.Address == pickItItem.LabelOnGround.Address) != null && tryCount < 6)
             {
                 tryCount++;
-                yield return waitForNextTry;
+                yield return _waitForNextTry;
             }
 
-            yield return waitForNextTry;
+            yield return _waitForNextTry;
 
             //   Mouse.MoveCursorToPosition(oldMousePosition);
         }
@@ -543,7 +551,7 @@ namespace PickIt
             if (!Directory.Exists(PickitConfigFileDirectory))
             {
                 Directory.CreateDirectory(PickitConfigFileDirectory);
-                CustomRulesExists = false;
+                _customRulesExists = false;
                 return;
             }
 
@@ -563,7 +571,7 @@ namespace PickIt
 
             if (fileName == string.Empty)
             {
-                CustomRulesExists = false;
+                _customRulesExists = false;
                 return hashSet;
             }
 
@@ -571,7 +579,7 @@ namespace PickIt
 
             if (!File.Exists(pickitFile))
             {
-                CustomRulesExists = false;
+                _customRulesExists = false;
                 return hashSet;
             }
 
@@ -612,7 +620,7 @@ namespace PickIt
 
         public override void OnPluginDestroyForHotReload()
         {
-            pickItCoroutine.Done(true);
+            _pickItCoroutine.Done(true);
         }
 
         #endregion

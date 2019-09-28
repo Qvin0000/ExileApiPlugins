@@ -59,13 +59,13 @@ namespace MinimapIcons
         public override void OnLoad()
         {
             LoadConfig();
+            Graphics.InitImage("sprites.png");
+            Graphics.InitImage("Icons.png");
             CanUseMultiThreading = true;
         }
 
         public override bool Initialise()
         {
-            Graphics.InitImage("sprites.png");
-            Graphics.InitImage("Icons.png");
             return true;
         }
 

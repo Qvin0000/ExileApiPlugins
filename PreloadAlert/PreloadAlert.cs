@@ -47,7 +47,7 @@ namespace PreloadAlert
 
         public PreloadAlert()
         {
-            Order = 2;
+            Order = -40;
         }
 
         private Dictionary<string, PreloadConfigLine> alerts { get; } = new Dictionary<string, PreloadConfigLine>();
@@ -98,8 +98,9 @@ namespace PreloadAlert
         {
             if (ImGui.Button("Dump preloads"))
             {
+                Directory.CreateDirectory(Path.Combine(DirectoryFullName, "Dumps"));
                 var path = Path.Combine(DirectoryFullName, "Dumps",
-                    $"{GameController.Area.CurrentArea.Name} ({DateTime.Now}) [{GameController.Area.CurrentArea.Hash}].txt");
+                    $"{GameController.Area.CurrentArea.Name} ({DateTime.Now}).txt");
 
                 File.WriteAllLines(path, PreloadDebug);
             }
@@ -110,7 +111,7 @@ namespace PreloadAlert
                 var serializeObject = JsonConvert.SerializeObject(groupBy, Formatting.Indented);
 
                 var path = Path.Combine(DirectoryFullName, "Dumps",
-                    $"{GameController.Area.CurrentArea.Name} ({DateTime.Now}) [{GameController.Area.CurrentArea.Hash}].txt");
+                    $"{GameController.Area.CurrentArea.Name} ({DateTime.Now}).txt");
 
                 File.WriteAllText(path, serializeObject);
             }
@@ -227,7 +228,9 @@ namespace PreloadAlert
         {
             alertStrings = LoadConfig("config/preload_alerts.txt");
             SetupPredefinedConfigs();
-
+            Graphics.InitImage("preload-start.png");
+            Graphics.InitImage("preload-end.png");
+            Graphics.InitImage("preload-new.png");
             if (File.Exists(PRELOAD_ALERTS_PERSONAL))
                 alertStrings = alertStrings.MergeLeft(LoadConfig(PRELOAD_ALERTS_PERSONAL));
             else
@@ -237,12 +240,7 @@ namespace PreloadAlert
         public override bool Initialise()
         {
             GameController.PluginBridge.SaveMethod($"{nameof(PreloadAlert)}.{nameof(AddPreload)}", AddPreload);
-            Graphics.InitImage("preload-start.png");
-            Graphics.InitImage("preload-end.png");
-            Graphics.InitImage("preload-new.png");
-
             AreaNameColor = Settings.AreaTextColor;
-
             debugInformation = new DebugInformation("Preload alert parsing", false);
             /*GameController.Files.LoadedFiles += (sender, dictionary) =>
             {
@@ -263,13 +261,12 @@ namespace PreloadAlert
             {
                 DrawAlers.Clear();
             }
-
+            PreloadDebugAction = null;
             if (GameController.Area.CurrentArea.IsHideout && !Settings.ShowInHideout)
             {
+                isLoading = false;
                 return;
             }
-
-            PreloadDebugAction = null;
             Core.ParallelRunner.Run(new Coroutine(Parse(), this, "Preload parse"));
 
             isLoading = false;
