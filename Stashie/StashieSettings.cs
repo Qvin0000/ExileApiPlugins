@@ -28,8 +28,17 @@ namespace Stashie
             CustomRefillOptions = new Dictionary<string, RangeNode<int>>();
             VisitTabWhenDone = new ToggleNode(false);
             TabToVisitWhenDone = new RangeNode<int>(0, 0, 40);
+            IgnoredCells = new int[,]
+            {
+                { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+                { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+            };
         }
 
+        public int[,] IgnoredCells { get; set; }
         [Menu("Settings", 500)]
         public EmptyNode Settings { get; set; }
         [Menu("Require Hotkey", "If you just want Stashie to drop items to stash, as soon as you open it.", 1000, 500)]
