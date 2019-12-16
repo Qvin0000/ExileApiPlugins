@@ -1,0 +1,4 @@
+[submodule "BasicFlaskRoutine"]
+	path = BasicFlaskRoutine
+	url = http://github.com/sychotixdev/BasicFlaskRoutine
+	branch = master
