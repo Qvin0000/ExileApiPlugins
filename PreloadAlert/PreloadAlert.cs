@@ -314,9 +314,9 @@ namespace PreloadAlert
 
                                     //some magic number
 
-                                    if (memory.Read<long>(iter + 0x10) != 0 && memory.Read<int>(fileAddr + 0x48) == areaChangeCount)
+                                    if (memory.Read<long>(iter + 0x10) != 0 && memory.Read<int>(fileAddr + 0x40) == areaChangeCount)
                                     {
-                                        var size = memory.Read<int>(fileAddr + 0x30);
+                                        var size = memory.Read<int>(fileAddr + 0x20);
                                         if (size < 7) return;
 
                                         var fileNamePointer = memory.Read<long>(iter + 0x10);
@@ -352,9 +352,9 @@ namespace PreloadAlert
                                 {
                                     var fileAddr = memory.Read<long>(iter + 0x18);
 
-                                    if (memory.Read<long>(iter + 0x10) != 0 && memory.Read<int>(fileAddr + 0x48) == areaChangeCount)
+                                    if (memory.Read<long>(iter + 0x10) != 0 && memory.Read<int>(fileAddr + 0x40) == areaChangeCount)
                                     {
-                                        var size = memory.Read<int>(fileAddr + 0x30);
+                                        var size = memory.Read<int>(fileAddr + 0x20);
                                         if (size < 7) continue;
 
                                         var fileNamePointer = memory.Read<long>(iter + 0x10);
