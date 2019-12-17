@@ -490,11 +490,12 @@ namespace PickIt
             var rectangleOfGameWindow = GameController.Window.GetWindowRectangleTimeCache;
             var oldMousePosition = Mouse.GetCursorPositionVector();
             _clickWindowOffset = rectangleOfGameWindow.TopLeft;
-            rectangleOfGameWindow.Inflate(-55, -55);
             centerOfItemLabel.X += rectangleOfGameWindow.Left;
             centerOfItemLabel.Y += rectangleOfGameWindow.Top;
+            rectangleOfGameWindow.Inflate(-155, -100);
+            rectangleOfGameWindow.Height -= 50;
 
-            if (!rectangleOfGameWindow.Intersects(new RectangleF(centerOfItemLabel.X, centerOfItemLabel.Y, 3, 3)))
+            if (!rectangleOfGameWindow.Contains(centerOfItemLabel))
             {
                 _fullWork = true;
                 LogMessage($"Label outside game window. Label: {centerOfItemLabel} Window: {rectangleOfGameWindow}", 5, Color.Red);
