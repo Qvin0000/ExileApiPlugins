@@ -21,16 +21,15 @@ namespace PickIt
             LabelOnGround = item;
             Distance = distance;
             var itemItemOnGround = item.ItemOnGround;
-            var worldItem = itemItemOnGround?.GetComponent<WorldItem>();
+            var worldItem = itemItemOnGround?.GetComponent<WorldItem>()?.ItemEntity ?? itemItemOnGround;
             if (worldItem == null) return;
-            var groundItem = worldItem.ItemEntity;
-            GroundItem = groundItem;
-            Path = groundItem?.Path;
+            GroundItem = worldItem;
+            Path = GroundItem?.Path;
             if (GroundItem == null) return;
 
             if (Path != null && Path.Length < 1)
             {
-                DebugWindow.LogMsg($"World: {worldItem.Address:X} P: {Path}", 2);
+                DebugWindow.LogMsg($"World: {worldItem?.Address:X} P: {Path}", 2);
                 DebugWindow.LogMsg($"Ground: {GroundItem.Address:X} P {Path}", 2);
                 return;
             }
@@ -126,6 +125,7 @@ namespace PickIt
         public int Width { get; }
         public bool IsFractured { get; }
         public int Weight { get; set; }
+        public bool IsMetamorphBodyPart { get; set; }//MetamorphBodyPart don't have a WorldItem component so using this way
 
         public override string ToString()
         {
