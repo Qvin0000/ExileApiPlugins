@@ -1047,7 +1047,7 @@ namespace Stashie
 #endif
                 }
 
-                _renamedAllStashNames.Add(realStashName);
+                _renamedAllStashNames.Add(realStashName ?? "%NULL%");
             }
 
             Settings.AllStashNames.Insert(0, "Ignore");

@@ -257,6 +257,15 @@ namespace PickIt
         {
             try
             {
+                #region Metamorph Body Parts
+
+                if (Settings.MetamorphBodyParts && item.IsMetamorphBodyPart)
+                {
+                    return true;
+                }
+
+                #endregion
+
                 #region Currency
 
                 if (Settings.AllCurrency && item.ClassName.EndsWith("Currency"))
@@ -428,7 +437,6 @@ namespace PickIt
             if (!Input.GetKeyState(Settings.PickUpKey.Value) || !GameController.Window.IsForeground()) yield break;
             var window = GameController.Window.GetWindowRectangleTimeCache;
             var rect = new RectangleF(window.X, window.X, window.X + window.Width, window.Y + window.Height);
-            var playerPos = GameController.Player.GridPos;
 
             List<CustomItem> currentLabels;
 
@@ -440,9 +448,8 @@ namespace PickIt
                                 x.IsVisible && x.Label.GetClientRectCache.Center.PointInRectangle(rect) &&
                                 (x.CanPickUp || x.MaxTimeForPickUp.TotalSeconds <= 0))
                     .Select(x => new CustomItem(x, GameController.Files,
-                        x.ItemOnGround.GetComponent<Positioned>().GridPos
-                            .Distance(playerPos), _weightsRules))
-                    .OrderByDescending(x => x.Weight).ThenBy(x => x.Distance).ToList();
+                        x.ItemOnGround.DistancePlayer, _weightsRules))
+                    .OrderByDescending(x => x.Weight).ToList();
             }
             else
             {
@@ -452,20 +459,27 @@ namespace PickIt
                                 x.IsVisible &&
                                 (x.CanPickUp || x.MaxTimeForPickUp.TotalSeconds <= 0))
                     .Select(x => new CustomItem(x, GameController.Files,
-                        x.ItemOnGround.GetComponent<Positioned>().GridPos
-                            .Distance(playerPos), _weightsRules))
-                    .OrderBy(x => x.Distance).ToList();
+                        x.ItemOnGround.DistancePlayer, _weightsRules))
+                    .ToList();
             }
+
+            var metamorphLabels = GameController.Game.IngameState.IngameUi.ItemsOnGroundLabels.ToList()
+                .Where(x => x.Address != 0 && x.ItemOnGround.Path.ToLower().Contains("metamorph"))
+                .Select(y => new CustomItem(y, GameController.Files, y.ItemOnGround.DistancePlayer, _weightsRules){IsMetamorphBodyPart = true}).ToList();
+
+            currentLabels.AddRange(metamorphLabels);
+
+            currentLabels = currentLabels.OrderBy(x => x.Distance).ToList();
 
             GameController.Debug["PickIt"] = currentLabels;
             var pickUpThisItem = currentLabels.FirstOrDefault(x => DoWePickThis(x) && x.Distance < Settings.PickupRange);
-            if (pickUpThisItem?.GroundItem != null) yield return TryToPickV2(pickUpThisItem);
+            if (pickUpThisItem?.GroundItem != null || (pickUpThisItem?.IsMetamorphBodyPart ?? false)) yield return TryToPickV2(pickUpThisItem);
             _fullWork = true;
         }
 
         private IEnumerator TryToPickV2(CustomItem pickItItem)
         {
-            if (!pickItItem.IsValid)
+            if (!pickItItem.IsValid && !pickItItem.IsMetamorphBodyPart)
             {
                 _fullWork = true;
                 LogMessage("PickItem is not valid.", 5, Color.Red);
@@ -476,7 +490,7 @@ namespace PickIt
             var rectangleOfGameWindow = GameController.Window.GetWindowRectangleTimeCache;
             var oldMousePosition = Mouse.GetCursorPositionVector();
             _clickWindowOffset = rectangleOfGameWindow.TopLeft;
-            rectangleOfGameWindow.Inflate(-25, -25);
+            rectangleOfGameWindow.Inflate(-55, -55);
             centerOfItemLabel.X += rectangleOfGameWindow.Left;
             centerOfItemLabel.Y += rectangleOfGameWindow.Top;
 
