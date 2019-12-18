@@ -259,7 +259,7 @@ namespace PickIt
             {
                 #region Metamorph Body Parts
 
-                if (Settings.MetamorphBodyParts && item.IsMetamorphBodyPart)
+                if (Settings.MetamorphBodyParts && (item.IsMetamorphBodyPart || item.ClassName.EndsWith("MetamorphosisDNA")))
                 {
                     return true;
                 }
