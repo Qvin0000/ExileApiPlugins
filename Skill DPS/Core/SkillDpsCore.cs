@@ -76,11 +76,6 @@ namespace Skill_DPS.Core
 
             foreach (var skill in skills)
             {
-                if (skill.Skill.SkillSlotIndex >= 8 && !Input.IsKeyDown(Keys.LControlKey))
-                {
-                    continue;
-                }
-
                 var box = skill.SkillElement.GetClientRect();
                 var newBox = new RectangleF(box.X, box.Y - 2, box.Width, -15);
 
@@ -118,6 +113,9 @@ namespace Skill_DPS.Core
 
             foreach (var skill in skills)
             {
+                if (skill.Box.Location == SharpDX.Vector2.Zero || !skill.SkillElement.IsVisible)
+                    continue;
+
                 Graphics.DrawText(ToKmb(Convert.ToDecimal(skill.Value)), skill.Pos, Settings.FontColor, Settings.FontSize, FontAlign.Center);
                 Graphics.DrawBox(skill.Box, Settings.BackgroundColor);
                 Graphics.DrawFrame(skill.Box, Settings.BorderColor, 1);
@@ -152,15 +150,10 @@ namespace Skill_DPS.Core
 
                     if (actorSkill.Id == skillId)
                     {
-                        var realIndex = index;
-
-                        if (realIndex >= 8)
-                            realIndex -= 5;
-
                         returnSkills.Add(new Data
                         {
                             Skill = actorSkill,
-                            SkillElement = skillbarChildren[realIndex]
+                            SkillElement = skillbarChildren[index]
                         });
 
                         break;
