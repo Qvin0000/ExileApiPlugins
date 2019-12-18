@@ -464,7 +464,7 @@ namespace PickIt
             }
 
             var metamorphLabels = GameController.Game.IngameState.IngameUi.ItemsOnGroundLabels.ToList()
-                .Where(x => x.Address != 0 && x.ItemOnGround.Path.ToLower().Contains("metamorph"))
+                .Where(x => x.Address != 0 && x.ItemOnGround.Path.Contains("MetamorphosisMonsterMarker"))
                 .Select(y => new CustomItem(y, GameController.Files, y.ItemOnGround.DistancePlayer, _weightsRules){IsMetamorphBodyPart = true}).ToList();
 
             currentLabels.AddRange(metamorphLabels);
