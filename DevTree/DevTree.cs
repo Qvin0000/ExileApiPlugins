@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
@@ -34,6 +35,7 @@ namespace DevTree
         private MethodInfo GetComponentMethod;
         private readonly HashSet<string> IgnoredPropertioes = new HashSet<string> {"M", "TheGame", "Address"};
         private string inputFilter = "";
+        private string guiObjAddr = "";
         private readonly Dictionary<string, object> objects = new Dictionary<string, object>();
         private readonly Dictionary<string, long> OffsetFinder = new Dictionary<string, long>(24);
         private List<string> Rarities;
@@ -242,6 +244,49 @@ namespace DevTree
                                         x.GridPos.Distance(playerGridPos) < Settings.NearestEntsRange)
                             .OrderBy(x => x.GridPos.Distance(playerGridPos)).ToList();
                     }
+                }
+            }
+
+            ImGui.SameLine();
+            ImGui.PushItemWidth(128);
+            if (ImGui.InputText("CheckAddressIsGuiObject", ref guiObjAddr, 128))
+            {
+                if (long.TryParse(guiObjAddr, NumberStyles.HexNumber, CultureInfo.CurrentCulture, out var objAddr))
+                {
+                    var queue = new Queue<Element>();
+                    queue.Enqueue(GameController.Game.IngameState.UIRoot);
+                    var found = false;
+                    while (queue.Count > 0)
+                    {
+                        var element = queue.Dequeue();
+
+                        if (element.Address == objAddr)
+                        {
+                            var indexPath = new List<int>();
+                            var iterator = element;
+
+                            while (iterator != null && iterator.Address != 0)
+                            {
+                                if (iterator.Parent != null && iterator.Parent.Address != 0)
+                                    indexPath.Add(iterator.Parent.Children.ToList().FindIndex(x => x.Address == iterator.Address));
+
+                                iterator = iterator.Parent;
+                            }
+
+                            indexPath.Reverse();
+ 
+                            LogMessage("IS gui element!"  + $"Path from root: [{string.Join(", ", indexPath)}]", 3);
+                            found = true;
+                            break;
+                        }
+                     
+                        foreach (var elementChild in element.Children)
+                        {
+                            queue.Enqueue(elementChild);
+                        }
+                    }
+                    if(!found)
+                    LogMessage("NOT a gui element!", 3);
                 }
             }
 

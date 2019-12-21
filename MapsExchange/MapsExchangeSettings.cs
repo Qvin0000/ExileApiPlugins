@@ -38,7 +38,7 @@ namespace MapsExchange
         [Menu("Note: Press CTRL whe atlas opened to see map level end exp penalty", -88, -100)]
         public EmptyNode AtlasNote { get; set; }
         [Menu("Maps Tab (to check amount)", -99, -100)]
-        public StashTabNode MapTabNode { get; set; } = new StashTabNode();
+        public RangeNode<int> MapTabNode { get; set; } = new RangeNode<int>(0, 0, 100);
         [Menu("Show UnCompleted", 0, -100)]
         public ToggleNode ShowUnCompleted { get; set; } = new ToggleNode(true);
         [Menu("Text Transparency", 1, 0)]
