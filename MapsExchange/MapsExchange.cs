@@ -190,7 +190,8 @@ namespace MapsExchange
                 Color.YellowGreen
             };
 
-            var initImage = Graphics.InitImage(Path.Combine(DirectoryFullName, "images","ImagesAtlas.png"), false);
+            var initImage = Graphics.InitImage(Path.Combine(DirectoryFullName, "images", "ImagesAtlas.png"), false);
+
             if (!initImage)
                 return false;
 
@@ -222,7 +223,7 @@ namespace MapsExchange
                         if (CurrentStashAddr != visibleStash.Address)
                         {
                             CurrentStashAddr = visibleStash.Address;
-                            var updateMapsCount = Settings.MapTabNode.VisibleIndex == stash.IndexVisibleStash;
+                            var updateMapsCount = Settings.MapTabNode.Value == stash.IndexVisibleStash;
                             UpdateData(items, updateMapsCount);
                         }
                     }
@@ -307,7 +308,6 @@ namespace MapsExchange
 
                 textColor.A = textTransp;
 
-                
                 Graphics.DrawText(mapName, textRect.Translate(0, -15), textColor, testSize, fontFlags);
 
                 var mapNameSize = Graphics.MeasureText(mapName, testSize);
@@ -646,21 +646,23 @@ namespace MapsExchange
                 drawRect.Right -= offset;
                 drawRect.Left += offset;
 
-                var Completed = 0;
+                var completed = 0;
 
-                if (comp.Contains(mapComponent.Area))
-                    Completed++;
+                var area = mapComponent.Area;
 
-                if (bonusComp.Contains(mapComponent.Area))
-                    Completed++;
+                if (comp.Contains(area))
+                    completed++;
 
-                var shaperElder = shEld.Contains(mapComponent.Area);
+                if (bonusComp.Contains(area))
+                    completed++;
 
-                if (Completed == 0)
+                var shaperElder = shEld.Contains(area);
+
+                if (completed == 0)
                 {
                     Graphics.DrawImage("ImagesAtlas.png", drawRect, new RectangleF(.184f, .731f, .184f, .269f), Color.Red);
                 }
-                else if (Completed == 1)
+                else if (completed == 1)
                 {
                     Graphics.DrawImage("ImagesAtlas.png", drawRect, new RectangleF(.184f, .731f, .184f, .269f), Color.Yellow);
                 }
