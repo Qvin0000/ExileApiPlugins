@@ -95,153 +95,55 @@ namespace PickIt
             }
         }
 
-        /*public override void DrawSettings()
+        private bool ChatOpen
         {
-            ImGui.BulletText($"v{PluginVersion}");
-            ImGui.BulletText($"Last Updated: {buildDate}");
-            Settings.PickUpKey = ImGuiExtension.HotkeySelector("Pickup Key", Settings.PickUpKey);
-            Settings.LeftClickToggleNode.Value = ImGuiExtension.Checkbox("Mouse Button: " + (Settings.LeftClickToggleNode ? "Left" : "Right"), Settings.LeftClickToggleNode);
-            Settings.LeftClickToggleNode.Value = ImGuiExtension.Checkbox("Return Mouse To Position Before Click", Settings.ReturnMouseToBeforeClickPosition);
-            Settings.GroundChests.Value = ImGuiExtension.Checkbox("Click Chests If No Items Around", Settings.GroundChests);
-            Settings.PickupRange.Value = ImGuiExtension.IntSlider("Pickup Radius", Settings.PickupRange);
-            Settings.ChestRange.Value = ImGuiExtension.IntSlider("Chest Radius", Settings.ChestRange);
-            Settings.ExtraDelay.Value = ImGuiExtension.IntSlider("Extra Click Delay", Settings.ExtraDelay);
-            Settings.MouseSpeed.Value = ImGuiExtension.FloatSlider("Mouse speed", Settings.MouseSpeed);
-            Settings.TimeBeforeNewClick.Value = ImGuiExtension.IntSlider("Time wait for new click", Settings.TimeBeforeNewClick);
-            //Settings.OverrideItemPickup.Value = ImGuiExtension.Checkbox("Item Pickup Override", Settings.OverrideItemPickup); ImGui.SameLine();
-            //ImGuiExtension.ToolTip("Override item.CanPickup\n\rDO NOT enable this unless you know what you're doing!");
-            
-            var tempRef = false;
-            if (ImGui.CollapsingHeader("Pickit Rules", TreeNodeFlags.Framed | TreeNodeFlags.DefaultOpen))
+            get
             {
-                if (ImGui.Button("Reload All Files")) LoadRuleFiles();
-                Settings.NormalRuleFile = ImGuiExtension.ComboBox("Normal Rules", Settings.NormalRuleFile, PickitFiles, out tempRef);
-                if (tempRef) _normalRules = LoadPickit(Settings.NormalRuleFile);
-                Settings.MagicRuleFile = ImGuiExtension.ComboBox("Magic Rules", Settings.MagicRuleFile, PickitFiles, out tempRef);
-                if (tempRef) _magicRules = LoadPickit(Settings.MagicRuleFile);
-                Settings.RareRuleFile = ImGuiExtension.ComboBox("Rare Rules", Settings.RareRuleFile, PickitFiles, out tempRef);
-                if (tempRef) _rareRules = LoadPickit(Settings.RareRuleFile);
-                Settings.UniqueRuleFile = ImGuiExtension.ComboBox("Unique Rules", Settings.UniqueRuleFile, PickitFiles, out tempRef);
-                if (tempRef) _uniqueRules = LoadPickit(Settings.UniqueRuleFile);
+                var chatBox = GameController?.Game?.IngameState?.UIRoot.GetChildAtIndex(1)?.GetChildAtIndex(37)?.GetChildAtIndex(3);
+                if (chatBox.IsVisibleLocal)
+                {
+                    return true;
+                }
+                else return false;
             }
-
-            if (ImGui.CollapsingHeader("Item Logic", TreeNodeFlags.Framed | TreeNodeFlags.DefaultOpen))
-            {
-                Settings.ShaperItems.Value = ImGuiExtension.Checkbox("Pickup Shaper Items", Settings.ShaperItems);
-                ImGui.SameLine();
-                Settings.ElderItems.Value = ImGuiExtension.Checkbox("Pickup Elder Items", Settings.ElderItems);
-                if (ImGui.TreeNode("Links/Sockets/RGB"))
-                {
-                    Settings.RGB.Value = ImGuiExtension.Checkbox("RGB Items", Settings.RGB);
-                    Settings.TotalSockets.Value = ImGuiExtension.IntSlider("##Sockets", Settings.TotalSockets);
-                    ImGui.SameLine();
-                    Settings.Sockets.Value = ImGuiExtension.Checkbox("Sockets", Settings.Sockets);
-                    Settings.LargestLink.Value = ImGuiExtension.IntSlider("##Links", Settings.LargestLink);
-                    ImGui.SameLine();
-                    Settings.Links.Value = ImGuiExtension.Checkbox("Links", Settings.Links);
-                    ImGui.Separator();
-                    ImGui.TreePop();
-                }
-
-                if (ImGui.TreeNode("Overrides"))
-                {
-                    Settings.PickUpEverything.Value = ImGuiExtension.Checkbox("Pickup Everything", Settings.PickUpEverything);
-                    Settings.AllDivs.Value = ImGuiExtension.Checkbox("All Divination Cards", Settings.AllDivs);
-                    Settings.AllCurrency.Value = ImGuiExtension.Checkbox("All Currency", Settings.AllCurrency);
-                    Settings.AllUniques.Value = ImGuiExtension.Checkbox("All Uniques", Settings.AllUniques);
-                    Settings.QuestItems.Value = ImGuiExtension.Checkbox("Quest Items", Settings.QuestItems);
-                    Settings.Maps.Value = ImGuiExtension.Checkbox("##Maps", Settings.Maps);
-                    ImGui.SameLine();
-                    if (ImGui.TreeNode("Maps"))
-                    {
-                        Settings.MapTier.Value = ImGuiExtension.IntSlider("Lowest Tier", Settings.MapTier);
-                        Settings.UniqueMap.Value = ImGuiExtension.Checkbox("All Unique Maps", Settings.UniqueMap);
-                        Settings.MapFragments.Value = ImGuiExtension.Checkbox("Fragments", Settings.MapFragments);
-                        ImGui.Spacing();
-                        ImGui.TreePop();
-                    }
-
-                    Settings.GemQuality.Value = ImGuiExtension.IntSlider("##Gems", "Lowest Quality", Settings.GemQuality);
-                    ImGui.SameLine();
-                    Settings.Gems.Value = ImGuiExtension.Checkbox("Gems", Settings.Gems);
-                    ImGui.Separator();
-                    ImGui.TreePop();
-                }
-
-                Settings.Rares.Value = ImGuiExtension.Checkbox("##Rares", Settings.Rares);
-                ImGui.SameLine();
-                if (ImGui.TreeNode("Rares##asd"))
-                {
-                    Settings.RareJewels.Value = ImGuiExtension.Checkbox("Jewels", Settings.RareJewels);
-                    Settings.RareRingsilvl.Value = ImGuiExtension.IntSlider("##RareRings", "Lowest iLvl", Settings.RareRingsilvl);
-                    ImGui.SameLine();
-                    Settings.RareRings.Value = ImGuiExtension.Checkbox("Rings", Settings.RareRings);
-                    Settings.RareAmuletsilvl.Value = ImGuiExtension.IntSlider("##RareAmulets", "Lowest iLvl", Settings.RareAmuletsilvl);
-                    ImGui.SameLine();
-                    Settings.RareAmulets.Value = ImGuiExtension.Checkbox("Amulets", Settings.RareAmulets);
-                    Settings.RareBeltsilvl.Value = ImGuiExtension.IntSlider("##RareBelts", "Lowest iLvl", Settings.RareBeltsilvl);
-                    ImGui.SameLine();
-                    Settings.RareBelts.Value = ImGuiExtension.Checkbox("Belts", Settings.RareBelts);
-                    Settings.RareGlovesilvl.Value = ImGuiExtension.IntSlider("##RareGloves", "Lowest iLvl", Settings.RareGlovesilvl);
-                    ImGui.SameLine();
-                    Settings.RareGloves.Value = ImGuiExtension.Checkbox("Gloves", Settings.RareGloves);
-                    Settings.RareBootsilvl.Value = ImGuiExtension.IntSlider("##RareBoots", "Lowest iLvl", Settings.RareBootsilvl);
-                    ImGui.SameLine();
-                    Settings.RareBoots.Value = ImGuiExtension.Checkbox("Boots", Settings.RareBoots);
-                    Settings.RareHelmetsilvl.Value = ImGuiExtension.IntSlider("##RareHelmets", "Lowest iLvl", Settings.RareHelmetsilvl);
-                    ImGui.SameLine();
-                    Settings.RareHelmets.Value = ImGuiExtension.Checkbox("Helmets", Settings.RareHelmets);
-                    Settings.RareArmourilvl.Value = ImGuiExtension.IntSlider("##RareArmours", "Lowest iLvl", Settings.RareArmourilvl);
-                    ImGui.SameLine();
-                    Settings.RareArmour.Value = ImGuiExtension.Checkbox("Armours", Settings.RareArmour);
-                    ImGui.Spacing();
-                    Settings.RareWeaponilvl.Value = ImGuiExtension.IntSlider("##RareWeapons", "Lowest iLvl", Settings.RareWeaponilvl);
-                    ImGui.SameLine();
-                    Settings.RareWeapon.Value = ImGuiExtension.Checkbox("Weapons", Settings.RareWeapon);
-                    Settings.RareShieldilvl.Value = ImGuiExtension.IntSlider("##Shields", "Lowest iLvl", Settings.RareWeaponilvl);
-                    ImGui.SameLine();
-                    Settings.RareShield.Value = ImGuiExtension.Checkbox("Shields", Settings.RareWeapon);
-                    Settings.RareWeaponWidth.Value = ImGuiExtension.IntSlider("Maximum Width##RareWeaponWidth", Settings.RareWeaponWidth);
-                    Settings.RareWeaponHeight.Value = ImGuiExtension.IntSlider("Maximum Height##RareWeaponHeight", Settings.RareWeaponHeight);
-                    Settings.ItemCells.Value = ImGuiExtension.IntSlider("Maximum Cells##RareWeaponCell", Settings.ItemCells);
-                    ImGui.TreePop();
-                }
-            }
-        }*/
+        }
 
         public override Job Tick()
         {
-            if (Input.GetKeyState(Keys.Escape)) _pickItCoroutine.Pause();
-
-            if (Input.GetKeyState(Settings.PickUpKey.Value))
+            if (!ChatOpen)
             {
-                _debugTimer.Restart();
+                if (Input.GetKeyState(Keys.Escape)) _pickItCoroutine.Pause();
 
-                if (_pickItCoroutine.IsDone)
+                if (Input.GetKeyState(Settings.PickUpKey.Value))
                 {
-                    var firstOrDefault = Core.ParallelRunner.Coroutines.FirstOrDefault(x => x.OwnerName == nameof(PickIt));
+                    _debugTimer.Restart();
 
-                    if (firstOrDefault != null)
-                        _pickItCoroutine = firstOrDefault;
+                    if (_pickItCoroutine.IsDone)
+                    {
+                        var firstOrDefault = Core.ParallelRunner.Coroutines.FirstOrDefault(x => x.OwnerName == nameof(PickIt));
+
+                        if (firstOrDefault != null)
+                            _pickItCoroutine = firstOrDefault;
+                    }
+
+                    _pickItCoroutine.Resume();
+                    _fullWork = false;
+                }
+                else
+                {
+                    if (_fullWork)
+                    {
+                        _pickItCoroutine.Pause();
+                        _debugTimer.Reset();
+                    }
                 }
 
-                _pickItCoroutine.Resume();
-                _fullWork = false;
-            }
-            else
-            {
-                if (_fullWork)
+                if (_debugTimer.ElapsedMilliseconds > 2000)
                 {
-                    _pickItCoroutine.Pause();
+                    _fullWork = true;
+                    LogMessage("Error pick it stop after time limit 2000 ms");
                     _debugTimer.Reset();
                 }
-            }
-
-            if (_debugTimer.ElapsedMilliseconds > 2000)
-            {
-                _fullWork = true;
-                LogMessage("Error pick it stop after time limit 2000 ms");
-                _debugTimer.Reset();
             }
 
             return null;
