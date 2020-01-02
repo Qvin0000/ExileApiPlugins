@@ -1,0 +1,4 @@
+[submodule "BuffUtil"]
+	path = BuffUtil
+	url = https://github.com/0xE0D59/BuffUtil.git
+	branch = master

@@ -119,17 +119,84 @@ namespace Stashie
             path = $"{DirectoryFullName}\\FitersConfig.txt";
 
             const string filtersConfig =
-                "//FilterName(menu name):\tfilters\t\t:ParentMenu(optionaly, will be created automatially for grouping)\r\n" +
-                "//Filter parts should divided by coma or | (for OR operation(any filter part can pass))\r\n" + "\r\n" +
-                "////////////\tAvailable properties:\t/////////////////////\r\n" + "/////////\tString (name) properties:\r\n" +
-                "//classname\r\n" + "//basename\r\n" + "//path\r\n" + "/////////\tNumerical properties:\r\n" +
-                "//itemquality\r\n//rarity\r\n//ilvl\r\n" + "/////////\tBoolean properties:\r\n" + "//identified\r\n" +
+                "//FilterName(menu name):\tfilters\t:ParentMenu(optionaly, will be created automatially for grouping)\r\n" +
+                "//Filter parts should divided by coma or | (for OR operation(any filter part can pass))\r\n" +
+                "////////////\tAvailable properties:\t/////////////////////\r\n" +
+                "/////////\tString (name) properties:\r\n" +
+                "//classname\r\n" +
+                "//basename\r\n" +
+                "//path\r\n" +
+                "/////////\tNumerical properties:\r\n" +
+                "//itemquality\r\n" +
+                "//rarity\r\n" +
+                "//ilvl\r\n" +
+                "/////////\tBoolean properties:\r\n" +
+                "//identified\r\n" +
                 "/////////////////////////////////////////////////////////////\r\n" +
-                "////////////\tAvailable operations:\t/////////////////////\r\n" + "/////////\tString (name) operations:\r\n" +
-                "//!=\t(not equal)\r\n" + "//=\t\t(equal)\r\n" + "//^\t\t(contains)\r\n" + "//!^\t(not contains)\r\n" +
-                "/////////\tNumerical operations:\r\n" + "//!=\t(not equal)\r\n" + "//=\t\t(equal)\r\n" + "//>\t\t(bigger)\r\n" +
-                "//<\t\t(less)\r\n//<=\t(less or qual)\r\n//>=\t(bigger or qual)\r\n/////////\tBoolean operations:\r\n//!\t\t(not/invert)\r\n/////////////////////////////////////////////////////////////\r\n\r\n//Default Tabs\r\nDivination Cards:\tClassName=DivinationCard\t\t\t\t\t:Default Tabs\r\nGems:\t\t\t\tClassName^Skill Gem,ItemQuality=0\t\t\t:Default Tabs\r\nCurrency:\t\t\tClassName=StackableCurrency,path!^Essence\t:Default Tabs\r\nLeaguestones:\t\tClassName=Leaguestone\t\t\t\t\t\t:Default Tabs\r\nEssences:\t\t\tBaseName^Essence,ClassName=StackableCurrency:Default Tabs\r\nJewels:\t\t\t\tClassName=Jewel\t\t\t\t\t\t\t\t:Default Tabs\r\nFlasks:\t\t\t\tClassName^Flask,ItemQuality=0\t\t\t\t:Default Tabs\r\nTalisman:\t\t\tClassName=Amulet,BaseName^Talisman\t\t\t:Default Tabs\r\nJewelery:\t\t\tClassName=Amulet|ClassName=Ring\t\t\t\t:Default Tabs\r\n//White Items:\t\tRarity=Normal\t\t\t\t\t\t\t\t:Default Tabs\r\n\r\n//Chance Items\r\nSorcerer Boots:\tBaseName=Sorcerer Boots,Rarity=Normal\t:Chance Items\r\nLeather Belt:\tBaseName=Leather Belt,Rarity=Normal\t\t:Chance Items\r\n\r\n//Vendor Recipes\r\nChisel Recipe:\t\tBaseName=Stone Hammer|BaseName=Rock Breaker,ItemQuality=20\t:Vendor Recipes\r\nQuality Gems:\t\tClassName^Skill Gem,ItemQuality>0\t\t\t\t\t\t\t:Vendor Recipes\r\nQuality Flasks:\t\tClassName^Flask,ItemQuality>0\t\t\t\t\t\t\t\t:Vendor Recipes\r\n\r\n//Maps\r\nShore Shaped:\tClassName=Map,BaseName=Shaped Shore Map\t:Maps\r\nStrand Shaped:\tClassName=Map,BaseName=Shaped Strand Map:Maps\r\nShaped Maps:\tClassName=Map,BaseName^Shaped\t\t\t:Maps\r\nUniq Maps:\t\tClassName=Map,Rarity=Unique\t\t\t\t:Maps\r\nOther Maps:\t\tClassName=Map\t\t\t\t\t\t\t:Maps\r\n\r\n//Chaos Recipe LVL 2 (unindentified and ilvl 60 or above)\r\nWeapons:\t\t!identified,Rarity=Rare,ilvl>=60,ClassName^Two Hand|ClassName^One Hand|ClassName=Bow|ClassName=Staff|ClassName=Sceptre|ClassName=Wand|ClassName=Dagger|ClassName=Claw|ClassName=Shield :Chaos Recipe\r\nJewelry:\t\t!identified,Rarity=Rare,ilvl>=60,ClassName=Ring|ClassName=Amulet \t:Chaos Recipe\r\nBelts:\t\t\t!identified,Rarity=Rare,ilvl>=60,ClassName=Belt \t\t\t\t\t:Chaos Recipe\r\nHelms:\t\t\t!identified,Rarity=Rare,ilvl>=60,ClassName=Helmet \t\t\t\t\t:Chaos Recipe\r\nBody Armours:\t!identified,Rarity=Rare,ilvl>=60,ClassName=Body Armour \t\t\t\t:Chaos Recipe\r\nBoots:\t\t\t!identified,Rarity=Rare,ilvl>=60,ClassName=Boots \t\t\t\t\t:Chaos Recipe\r\n" +
-                "Gloves:\t\t\t!identified,Rarity=Rare,ilvl>=60,ClassName=Gloves \t\t\t\t\t:Chaos Recipe";
+                "////////////\tAvailable operations:\t/////////////////////\r\n" +
+                "/////////\tString (name) operations:\r\n" +
+                "//!=\t(not equal)\r\n" +
+                "//=\t(equal)\r\n" +
+                "//^\t(contains)\r\n" +
+                "//!^\t(not contains)\r\n" +
+                "/////////\tNumerical operations:\r\n" +
+                "//!=\t(not equal)\r\n" +
+                "//=\t(equal)\r\n" +
+                "//>\t(bigger)\r\n" +
+                "//<\t(less)\r\n" +
+                "//<=\t(less or qual)\r\n" +
+                "//>=\t(bigger or qual)\r\n" +
+                "/////////\tBoolean operations:\r\n" +
+                "//!\t(not/invert)\r\n" +
+                "/////////////////////////////////////////////////////////////\r\n" +
+                "//Default Tabs\r\n" +
+                "Currency:\tClassName=StackableCurrency,path!^Essence,BaseName!^Fossil,BaseName!^Catalyst\t:Default Tabs\r\n" +
+                "Divination Cards:\tClassName=DivinationCard\t:Default Tabs\r\n" +
+                "Fossils:\tClassName=StackableCurrency,BaseName^Fossil\t:Default Tabs\r\n" +
+                "Catalysts:\tClassName=StackableCurrency,BaseName^Catalyst\t:Default Tabs\r\n" +
+                "Oils:\tClassName=StackableCurrency,BaseName^Oil\t:Default Tabs\r\n" +
+                "Leaguestones:\tClassName=Leaguestone\t:Default Tabs\r\n" +
+                "Essences:\tClassName=StackableCurrency,BaseName^Essence\t:Default Tabs\r\n" +
+                "Fragments:\tClassName=MapFragment\t:Default Tabs\r\n" +
+                "Breach splinters:\tClassName=StackableCurrency,BaseName^Splinter of\t:Default Tabs\r\n" +
+                "Legion splinters:\tClassName=StackableCurrency,BaseName^Timeless\t:Default Tabs\r\n" +
+                "Gems:\tClassName^Skill Gem,ItemQuality=0\t:Default Tabs\r\n" +
+                "Jewels:\tClassName=Jewel\t:Default Tabs\r\n" +
+                "Flasks:\tClassName^Flask,ItemQuality=0\t:Default Tabs\r\n" +
+                "Talisman:\tClassName=Amulet,BaseName^Talisman\t:Default Tabs\r\n" +
+                "Jewelery:\tClassName=Amulet|ClassName=Ring\t:Default Tabs\r\n" +
+                "//White Items:\tRarity=Normal\t:Default Tabs\r\n" +
+                "//Chance Items\r\n" +
+                "Sorcerer Boots:\tBaseName=Sorcerer Boots,Rarity=Normal\t:Chance Items\r\n" +
+                "Leather Belt:\tBaseName=Leather Belt,Rarity=Normal\t:Chance Items\r\n" +
+                "Prophecy Wand:\tBaseName=Prophecy Wand,Rarity=Normal\t:Chance Items\r\n" +
+                "//Vendor Recipes\r\n" +
+                "Chisel Recipe:\tBaseName=Stone Hammer|BaseName=Rock Breaker,ItemQuality=20\t:Vendor Recipes\r\n" +
+                "Quality Gems:\tClassName^Skill Gem,ItemQuality>0\t:Vendor Recipes\r\n" +
+                "Quality Flasks:\tClassName^Flask,ItemQuality>0\t:Vendor Recipes\r\n" +
+                "//Maps\r\n" +
+                "Shore Shaped:\tClassName=Map,BaseName=Shaped Shore Map\t:Maps\r\n" +
+                "Strand Shaped:\tClassName=Map,BaseName=Shaped Strand Map:Maps\r\n" +
+                "Shaped Maps:\tClassName=Map,BaseName^Shaped\t:Maps\r\n" +
+                "Uniq Maps:\tClassName=Map,Rarity=Unique\t:Maps\r\n" +
+                "Other Maps:\tClassName=Map\t:Maps\r\n" +
+                "//Chaos Recipe LVL 2 (unindentified and ilvl 60 or above)\r\n" +
+                "Weapons:\t!identified,Rarity=Rare,ilvl>=60,ClassName^Two Hand|ClassName^One Hand|ClassName=Bow|ClassName=Staff|ClassName=Sceptre|ClassName=Wand|ClassName=Dagger|ClassName=Claw|ClassName=Shield :Chaos Recipe\r\n" +
+                "Jewelry:\t!identified,Rarity=Rare,ilvl>=60,ClassName=Ring|ClassName=Amulet \t:Chaos Recipe\r\n" +
+                "Belts:\t!identified,Rarity=Rare,ilvl>=60,ClassName=Belt \t:Chaos Recipe\r\n" +
+                "Helms:\t!identified,Rarity=Rare,ilvl>=60,ClassName=Helmet \t:Chaos Recipe\r\n" +
+                "Body Armours:\t!identified,Rarity=Rare,ilvl>=60,ClassName=Body Armour \t:Chaos Recipe\r\n" +
+                "Boots:\t!identified,Rarity=Rare,ilvl>=60,ClassName=Boots \t:Chaos Recipe\r\n" +
+                "Gloves:\t!identified,Rarity=Rare,ilvl>=60,ClassName=Gloves \t:Chaos Recipe\r\n" +
+                "//Uniques\r\n" +
+                "Weapons:\t!identified,Rarity=UniqueClassName^Two Hand|ClassName^One Hand|ClassName=Bow|ClassName=Staff|ClassName=Sceptre|ClassName=Wand|ClassName=Dagger|ClassName=Claw|ClassName=Shield :Chaos Recipe\r\n" +
+                "Rings:\t!identified,Rarity=Unique,ClassName=Ring|ClassName=Amulet \t:Unique\r\n" +
+                "Amulets:\t!identified,Rarity=Unique,ClassName=Amulet \t:Unique\r\n" +
+                "Belts:\t!identified,Rarity=Unique,ClassName=Belt \t:Unique\r\n" +
+                "Helms:\t!identified,Rarity=Unique,ClassName=Helmet \t:Unique\r\n" +
+                "Body Armours:\t!identified,Rarity=Unique,ClassName=Body Armour \t:Unique\r\n" +
+                "Boots:\t!identified,Rarity=Unique,ClassName=Boots \t:Unique\r\n" +
+                "Gloves:\t!identified,Rarity=Unique,ClassName=Gloves \t:Unique\r\n";
 
             CreateFileAndAppendTextIfItDoesNotExitst(path, filtersConfig);
         }
