@@ -29,7 +29,7 @@ namespace PassiveSkillTreePlanter.UrlDecoders
 
             for (var k = Version > 3 ? 7 : 6; k < data.Length; k += 2)
             {
-                var nodeId = (ushort) ((data[k] << 8) | data[k + 1]);
+                var nodeId = (ushort)((data[k] << 8) | data[k + 1]);
                 nodesId.Add(nodeId);
             }
 

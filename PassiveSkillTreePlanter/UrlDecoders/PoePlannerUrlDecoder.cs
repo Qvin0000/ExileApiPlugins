@@ -49,7 +49,7 @@ namespace PassiveSkillTreePlanter.UrlDecoders
             {
                 for (var i = 4; i < skillsBuffSize - 1; i += 2)
                 {
-                    nodesId.Add((ushort) ((NodesData[i] << 8) | NodesData[i + 1]));
+                    nodesId.Add((ushort)((NodesData[i] << 8) | NodesData[i + 1]));
                 }
 
                 /*

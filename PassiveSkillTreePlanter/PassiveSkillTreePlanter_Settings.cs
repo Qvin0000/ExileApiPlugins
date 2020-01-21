@@ -10,23 +10,37 @@ namespace PassiveSkillTreePlanter
     {
         public PassiveSkillTreePlanterSettings()
         {
-            PickedBorderColor = new ColorNode(Color.Gray);
-            UnpickedBorderColor = new ColorNode(Color.Green);
-            WrongPickedBorderColor = new ColorNode(Color.Red);
+            BorderWidth = new RangeNode<int>(1, 1, 5);
             LineWidth = new RangeNode<int>(3, 0, 5);
-            LineColor = new ColorNode(new Color(0, 255, 0, 50));
+            LineColor = new ColorNode(Color.Gray);
             SelectedURLFile = string.Empty;
         }
+        public RangeNode<int> offsetX { get; set; } = new RangeNode<int>(12450, 11000, 14000);
+        public RangeNode<int> offsetY { get; set; } = new RangeNode<int>(11850, 11000, 13000);
+
+        public RangeNode<int> BorderWidth { get; set; }
+
+        public RangeNode<int> LineWidth { get; set; }
+
+        public ColorNode LineColor { get; set; }
+
+        public string SelectedURLFile { get; set; }
+        public string SelectedURL { get; set; } = "";
+        public string SelectedTreeName { get; set; } = "";
+
 
         public RangeNode<int> PickedBorderWidth { get; set; } = new RangeNode<int>(1, 1, 5);
         public RangeNode<int> UnpickedBorderWidth { get; set; } = new RangeNode<int>(3, 1, 5);
         public RangeNode<int> WrongPickedBorderWidth { get; set; } = new RangeNode<int>(3, 1, 5);
-        public ColorNode PickedBorderColor { get; set; }
-        public ColorNode UnpickedBorderColor { get; set; }
-        public ColorNode WrongPickedBorderColor { get; set; }
-        public RangeNode<int> LineWidth { get; set; }
-        public ColorNode LineColor { get; set; }
-        public string SelectedURLFile { get; set; }
+
+        public ColorNode PickedBorderColor { get; set; } = new ColorNode();
+        public ColorNode UnpickedBorderColor { get; set; } = new ColorNode(Color.Green);
+        public ColorNode WrongPickedBorderColor { get; set; } = new ColorNode(Color.Red);
+
+        public TreeConfig.SkillTreeData SelectedBuild { get; set; } = new TreeConfig.SkillTreeData();
+        public TreeConfig.SkillTreeData SelectedBuildCreating { get; set; } = new TreeConfig.SkillTreeData();
+
+        public ToggleNode EnableEzTreeChanger { get; set; } = new ToggleNode(true);
         public ToggleNode Enable { get; set; } = new ToggleNode(true);
     }
 }
