@@ -53,5 +53,13 @@ namespace Stashie
         [Menu("Mouse Steps", "", 5001, 500)]
         public RangeNode<int> MouseSpeed { get; set; }
         public ToggleNode Enable { get; set; }
+        public int[,] IgnoredCells { get; set; } =
+        {
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+        };
     }
 }

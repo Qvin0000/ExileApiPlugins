@@ -40,8 +40,15 @@ namespace PassiveSkillTreePlanter.SkillTreeJson
             {
                 var skillNode = new SkillNode
                 {
-                    Id = nd.Value.id, Name = nd.Value.dn, Orbit = nd.Value.o, OrbitIndex = nd.Value.oidx, bJevel = nd.Value.isJewelSocket,
-                    bKeyStone = nd.Value.ks, bMastery = nd.Value.m, bMult = nd.Value.isMultipleChoice, bNotable = nd.Value.not,
+                    Id = nd.Value.id,
+                    Name = nd.Value.dn,
+                    Orbit = nd.Value.o,
+                    OrbitIndex = nd.Value.oidx,
+                    bJevel = nd.Value.isJewelSocket,
+                    bKeyStone = nd.Value.ks,
+                    bMastery = nd.Value.m,
+                    bMult = nd.Value.isMultipleChoice,
+                    bNotable = nd.Value.not,
                     linkedNodes = nd.Value._out
                 };
 
@@ -55,7 +62,7 @@ namespace PassiveSkillTreePlanter.SkillTreeJson
             {
                 var ng = new SkillNodeGroup();
                 ng.OcpOrb = gp.Value.oo;
-                ng.Position = new Vector2((float) gp.Value.x, (float) gp.Value.y);
+                ng.Position = new Vector2((float)gp.Value.x, (float)gp.Value.y);
 
                 foreach (var node in gp.Value.n)
                 {

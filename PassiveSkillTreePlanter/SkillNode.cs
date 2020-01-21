@@ -6,8 +6,8 @@ namespace PassiveSkillTreePlanter
 {
     public class SkillNode
     {
-        public static float[] OrbitRadii = {0, 81.5f, 163, 326, 489};
-        public static float[] SkillsPerOrbit = {1, 6, 12, 12, 40};
+        public static float[] OrbitRadii = { 0, 81.5f, 163, 326, 489 };
+        public static float[] SkillsPerOrbit = { 1, 6, 12, 12, 40 };
         public bool bJevel;
         public bool bKeyStone;
         public bool bMastery;
@@ -31,11 +31,11 @@ namespace PassiveSkillTreePlanter
             {
                 if (SkillNodeGroup == null) return new Vector2();
                 double d = OrbitRadii[Orbit];
-                return SkillNodeGroup.Position - new Vector2((float) (d * Math.Sin(-Arc)), (float) (d * Math.Cos(-Arc)));
+                return SkillNodeGroup.Position - new Vector2((float)(d * Math.Sin(-Arc)), (float)(d * Math.Cos(-Arc)));
             }
         }
 
-        public double Arc => GetOrbitAngle(OrbitIndex, (int) SkillsPerOrbit[Orbit]);
+        public double Arc => GetOrbitAngle(OrbitIndex, (int)SkillsPerOrbit[Orbit]);
 
         public void Init()
         {
