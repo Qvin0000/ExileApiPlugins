@@ -53,6 +53,8 @@ namespace MapsExchange
 
         public override bool Initialise()
         {
+            #region Colors
+
             SelectColors = new[]
             {
                 Color.Aqua,
@@ -190,6 +192,8 @@ namespace MapsExchange
                 Color.YellowGreen
             };
 
+            #endregion
+
             var initImage = Graphics.InitImage(Path.Combine(DirectoryFullName, "images", "ImagesAtlas.png"), false);
 
             if (!initImage)
@@ -266,11 +270,15 @@ namespace MapsExchange
                 var mapName = area.Name;
                 if (mapName.Contains("Realm")) continue;
 
-                var centerPos = (atlasMap.Pos * 5.69f + rootPos) * scale;
+                var layer = GameController.Game.IngameState.ServerData.GetAtlasRegionUpgradesByRegion(atlasMap.AtlasRegion);
+                var centerPos = (atlasMap.GetPosByLayer(layer) * 5.69f + rootPos) * scale;
                 var textRect = centerPos;
                 textRect.Y -= 30 * scale;
                 var testSize = (int) Math.Round(Settings.TextSize.Value * scale);
                 var fontFlags = FontAlign.Center;
+
+                var tier = atlasMap.GetTierByLayer(layer);
+                var areaLvl = 65 + tier;
 
                 byte textTransp;
                 Color textBgColor;
@@ -301,9 +309,9 @@ namespace MapsExchange
 
                 var textColor = Settings.WhiteMapColor.Value;
 
-                if (area.AreaLevel >= 78)
+                if (areaLvl >= 78)
                     textColor = Settings.RedMapColor.Value;
-                else if (area.AreaLevel >= 73)
+                else if (areaLvl >= 73)
                     textColor = Settings.YellowMapColor.Value;
 
                 textColor.A = textTransp;
@@ -322,7 +330,6 @@ namespace MapsExchange
                 {
                     var upgraded = ShapeUpgradedMaps.Contains(area);
                     var areaLvlColor = Color.White;
-                    var areaLvl = area.AreaLevel;
 
                     if (upgraded)
                     {
@@ -367,11 +374,9 @@ namespace MapsExchange
 
                 if (InventShapersOrbs.Count > 0)
                 {
-                    var areaLvl = area.AreaLevel;
 
                     if (!ShapeUpgradedMaps.Contains(area))
                     {
-                        var tier = areaLvl - 67;
 
                         if (InventShapersOrbs.Contains(tier))
                         {
@@ -394,31 +399,26 @@ namespace MapsExchange
 
                 if (Settings.ShowAmount.Value)
                 {
-                    if (IsUniq(atlasMap))
+                    if (atlasMap.Area.IsUnique)
                         mapName += ":Uniq";
+
+                    mapName += $":{tier}";
 
                     if (Settings.MapStashAmount.TryGetValue(mapName, out var amount))
                     {
                         var mapCountSize = Graphics.MeasureText(amount.ToString(), testSize);
                         mapCountSize.X += 6;
+                        mapCountSize.Y += 7;
 
                         Graphics.DrawBox(
                             new RectangleF(centerPos.X - mapCountSize.X / 2, centerPos.Y - mapCountSize.Y / 2, mapCountSize.X,
                                 mapCountSize.Y), Color.Black);
 
                         textColor.A = 255;
-                        Graphics.DrawText(amount.ToString(), centerPos, textColor, testSize, FontAlign.Center);
+                        Graphics.DrawText(amount.ToString(), centerPos.Translate(0, -5), textColor, testSize, FontAlign.Center);
                     }
                 }
             }
-        }
-
-        private bool IsUniq(AtlasNode atlasMap)
-        {
-            var uniqTest = GameController.Memory.ReadStringU(GameController.Memory.Read<long>(atlasMap.Address + 0x3c, 0));
-
-            return !string.IsNullOrEmpty(uniqTest) && uniqTest.Contains("Uniq") ||
-                   Vector2.Distance(atlasMap.Pos, new Vector2(294.979f, 386.641f)) < 5;
         }
 
         private void ScanPlayerInventForShapersOrb()
@@ -465,7 +465,7 @@ namespace MapsExchange
 
             var bonusComp = serverData.BonusCompletedAreas;
             var comp = serverData.CompletedAreas;
-            var shapered = serverData.ShaperElderAreas;
+            //var shapered = serverData.ShaperElderAreas;
 
             var drawListPos = new Vector2(200, 200);
 
@@ -479,16 +479,16 @@ namespace MapsExchange
                         continue;
 
                     var mapArea = mapComponent.Area;
-                    var shaper = shapered.Contains(mapArea);
+                    //var shaper = shapered.Contains(mapArea);
 
-                    if (bonusComp.Contains(mapArea) && !shaper) continue;
+                    if (bonusComp.Contains(mapArea)) continue;
 
                     var color = Color.Yellow;
 
                     if (!comp.Contains(mapArea))
                         color = Color.Red;
 
-                    Graphics.DrawText(mapArea.Name + (shaper ? " (shaper/elder)" : ""), drawListPos, color, 20);
+                    Graphics.DrawText(mapArea.Name, drawListPos, color, 20);
                     drawListPos.Y += 20;
                 }
             }
@@ -542,8 +542,8 @@ namespace MapsExchange
                 drawRect.Height -= width + spacing * 2;
 
                 var baseName = bit.BaseName;
-
-                var mapItem = new MapItem(baseName, drawRect);
+                var map = item.GetComponent<Map>();
+                var mapItem = new MapItem(baseName, drawRect, map.Tier);
                 var mapComponent = item.GetComponent<Map>();
 
                 if (checkAmount)
@@ -557,21 +557,21 @@ namespace MapsExchange
                         areaName += ":Uniq";
                     }
 
-                    if (!Settings.MapStashAmount.ContainsKey(areaName))
-                        Settings.MapStashAmount.Add(areaName, 0);
+                    areaName += $":{mapComponent.Tier}";
 
-                    Settings.MapStashAmount[areaName]++;
+                    if (!Settings.MapStashAmount.ContainsKey(areaName))
+                        Settings.MapStashAmount.Add(areaName, 1);
+                    else
+                        Settings.MapStashAmount[areaName]++;
                 }
 
-                mapItem.Penalty = LevelXpPenalty(mapComponent.Area.AreaLevel);
+                mapItem.Penalty = LevelXpPenalty(TierToLevel(mapComponent.Tier));
                 MapItems.Add(mapItem);
             }
 
             var sortedMaps = (from demoClass in MapItems
-
                     //where demoClass.Tier >= Settings.MinTier && demoClass.Tier <= Settings.MaxTier
-                    //TODO: Check tiers (or nobody need it?)
-                    group demoClass by demoClass.Name
+                    group demoClass by $"{demoClass.Name}|{demoClass.Tier}"
                     into groupedDemoClass
                     select groupedDemoClass
                 ).ToDictionary(gdc => gdc.Key, gdc => gdc.ToList());
@@ -593,6 +593,11 @@ namespace MapsExchange
 
                 colorCounter++;
             }
+        }
+
+        private int TierToLevel(int tier)
+        {
+            return 65 + tier;
         }
 
         private void HiglightExchangeMaps()
@@ -680,7 +685,7 @@ namespace MapsExchange
                 if (Settings.ShowPenalty.Value)
                 {
                     var mods = entity.GetComponent<Mods>();
-                    var areaLvl = mapComponent.Tier + 67; // mapComponent.Area.AreaLevel;
+                    var areaLvl = TierToLevel(mapComponent.Tier); 
 
                     if (mods.ItemMods.Any(x => x.Name == "MapShaped")) //Shaper orb upgraded
                         areaLvl += 5;
@@ -744,11 +749,13 @@ namespace MapsExchange
             public RectangleF DrawRect;
             public string Name;
             public double Penalty;
+            public int Tier { get; }
 
-            public MapItem(string Name, RectangleF DrawRect)
+            public MapItem(string Name, RectangleF DrawRect, int tier)
             {
                 this.Name = Name;
                 this.DrawRect = DrawRect;
+                Tier = tier;
             }
         }
     }

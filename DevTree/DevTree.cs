@@ -119,7 +119,7 @@ namespace DevTree
             var type = o.GetType();
             if (name == null) name = $"{type.Name}";
 
-            if (o is RemoteMemoryObject)
+            if (o is RemoteMemoryObject || o is FileInMemory)
             {
                 var propertyInfo = type.GetProperty("Address");
                 if (propertyInfo != null) name += $" ({(long) propertyInfo.GetValue(o, null):X})##InitObject";
@@ -704,6 +704,7 @@ namespace DevTree
                         //Draw primitives
                         if (IsSimpleType(property.PropertyType))
                         {
+                         
                             ImGui.Text($"{property.Name}: ");
                             ImGui.SameLine();
                             ImGui.PushStyleColor(ImGuiCol.Text, new ImGuiVector4(1, 0.647f, 0, 1));
@@ -711,7 +712,8 @@ namespace DevTree
                             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new ImGuiVector4(0.25f, 0.25f, 0.25f, 1));
                             ImGui.PushStyleColor(ImGuiCol.ButtonActive, new ImGuiVector4(1, 1, 1, 1));
 
-                            if (ImGui.SmallButton(propertyValue.ToString())) ImGui.SetClipboardText(propertyValue.ToString());
+                            var propertyVal = property.Name == "Address" ? ((long) propertyValue).ToString("x") : propertyValue.ToString();
+                            if (ImGui.SmallButton(propertyVal)) ImGui.SetClipboardText(propertyVal);
 
                             ImGui.PopStyleColor(4);
                         }
