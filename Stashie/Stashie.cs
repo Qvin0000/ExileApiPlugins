@@ -34,7 +34,7 @@ namespace Stashie
         private List<CustomFilter> _customFilters;
         private List<RefillProcessor> _customRefills;
         private List<FilterResult> _dropItems;
-        private int[,] _ignoredCells;
+        //private int[,] _ignoredCells;
         private List<ListIndexNode> _settingsListNodes;
         private uint coroutineIteration;
         private Coroutine CoroutineWorker;
@@ -77,7 +77,7 @@ namespace Stashie
 
         public override void AreaChange(AreaInstance area)
         {
-            if (area.IsHideout) LoadIgnoredCells();
+            //if (area.IsHideout) LoadIgnoredCells();
 
             //TODO Add lab name with stash
             if (area.IsHideout || area.DisplayName.Contains("Azurite Mine"))
@@ -136,6 +136,8 @@ namespace Stashie
 
         public override void DrawSettings()
         {
+            DrawIgnoredCellsSettings();
+
             base.DrawSettings();
 
             foreach (var settingsCustomRefillOption in Settings.CustomRefillOptions)
@@ -313,7 +315,7 @@ namespace Stashie
             _settingsListNodes.Add(Settings.CurrencyStashTab);
         }
 
-        private void LoadIgnoredCells()
+        /*private void LoadIgnoredCells()
         {
             const string fileName = @"/IgnoredCells.json";
             var filePath = DirectoryFullName + fileName;
@@ -351,7 +353,7 @@ namespace Stashie
             defaultSettings = defaultSettings.Replace("],[", "],\n[");
             defaultSettings = defaultSettings.Replace("]]", "]\n]");
             File.WriteAllText(filePath, defaultSettings);
-        }
+        }*/
 
         public override void Render()
         {
@@ -448,6 +450,96 @@ namespace Stashie
             }
         }
 
+        public void SaveIgnoredSLotsFromInventoryTemplate()
+        {
+            Settings.IgnoredCells = new int[,]
+            {
+                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+            };
+            try
+            {
+                foreach (var inventories in GameController.Game.IngameState.ServerData.PlayerInventories)
+                {
+                    if (inventories.Inventory.InventType != InventoryTypeE.MainInventory)
+                        return;
+                    var inventory = inventories.Inventory.InventorySlotItems;
+                    foreach (var item in inventory)
+                    {
+                        var baseC = item.Item.GetComponent<Base>();
+                        var itemSizeX = baseC.ItemCellsSizeX;
+                        var itemSizeY = baseC.ItemCellsSizeY;
+                        var inventPosX = item.PosX;
+                        var inventPosY = item.PosY;
+                        for (var y = 0; y < itemSizeY; y++)
+                        {
+                            for (var x = 0; x < itemSizeX; x++)
+                                Settings.IgnoredCells[y + inventPosY, x + inventPosX] = 1;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LogError($"{e}", 5);
+            }
+        }
+
+        private void DrawIgnoredCellsSettings()
+        {
+            var newcontentRegionArea = ImGuiNative.igGetContentRegionAvail();
+            ImGui.BeginChild("##IgnoredCellsMain", new System.Numerics.Vector2(newcontentRegionArea.X, 204), true,
+                ImGuiWindowFlags.NoScrollWithMouse);
+            ImGui.Text("Ignored Inventory Slots (checked = ignored)");
+            // this tooltip always shows when stashie settings is active because of ImGui version changes
+            //ImGui.SetTooltip($"Checked = Item will be ignored{Environment.NewLine}UnChecked = Item will be processed");
+            ImGui.NewLine();
+            ImGui.SameLine();
+
+            newcontentRegionArea = ImGuiNative.igGetContentRegionAvail();
+            ImGui.BeginChild("##IgnoredCellsCels",
+                new System.Numerics.Vector2(newcontentRegionArea.X, newcontentRegionArea.Y), true,
+                ImGuiWindowFlags.NoScrollWithMouse);
+
+            try
+            {
+                if (ImGui.Button("Copy Inventory"))
+                {
+                    SaveIgnoredSLotsFromInventoryTemplate();
+                }
+            }
+            catch (Exception e)
+            {
+                LogError($"{e}", 10);
+            }
+
+            var _numb = 1;
+            for (var i = 0; i < 5; i++)
+            {
+                for (var j = 0; j < 12; j++)
+                {
+                    var toggled = Convert.ToBoolean(Settings.IgnoredCells[i, j]);
+                    if (ImGui.Checkbox($"##{_numb}IgnoredCells", ref toggled))
+                    {
+                        Settings.IgnoredCells[i, j] ^= 1;
+                    }
+
+                    if ((_numb - 1) % 12 < 11)
+                    {
+                        ImGui.SameLine();
+                    }
+
+                    _numb += 1;
+                }
+            }
+
+            ImGui.EndChild();
+            ImGui.EndChild();
+        }
+
         private bool CheckIgnoreCells(NormalInventoryItem inventItem)
         {
             var inventPosX = inventItem.InventPosX;
@@ -460,7 +552,8 @@ namespace Stashie
 
             if (inventPosY < 0 || inventPosY >= 5) return true;
 
-            return _ignoredCells[inventPosY, inventPosX] != 0; //No need to check all item size
+            //return _ignoredCells[inventPosY, inventPosX] != 0; //No need to check all item size
+            return Settings.IgnoredCells[inventPosY, inventPosX] != 0;
         }
 
         private FilterResult CheckFilters(ItemData itemData)
@@ -993,7 +1086,7 @@ namespace Stashie
             _settingsListNodes = new List<ListIndexNode>(100);
             LoadCustomRefills();
             LoadCustomFilters();
-            LoadIgnoredCells();
+            //LoadIgnoredCells();
 
             try
             {

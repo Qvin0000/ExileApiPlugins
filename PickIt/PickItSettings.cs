@@ -30,6 +30,7 @@ namespace PickIt
             GemQuality = new RangeNode<int>(1, 0, 20);
             GroundChests = new ToggleNode(false);
             ShaperItems = new ToggleNode(true);
+            MetamorphBodyParts = new ToggleNode(true);
             ElderItems = new ToggleNode(true);
             FracturedItems = new ToggleNode(true);
             Rares = new ToggleNode(true);
@@ -71,6 +72,7 @@ namespace PickIt
         public RangeNode<int> ChestRange { get; set; }
         public RangeNode<int> ExtraDelay { get; set; }
         public ToggleNode ShaperItems { get; set; }
+        public ToggleNode MetamorphBodyParts { get; set; }
         public ToggleNode ElderItems { get; set; }
         public ToggleNode FracturedItems { get; set; }
         public ToggleNode Rares { get; set; }
